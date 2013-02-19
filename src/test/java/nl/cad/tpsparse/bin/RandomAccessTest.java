@@ -17,7 +17,6 @@ package nl.cad.tpsparse.bin;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import nl.cad.tpsparse.bin.RandomAccess;
 
 import org.junit.Test;
 
@@ -84,5 +83,14 @@ public class RandomAccessTest {
                 (byte) 0xff }).leDouble()));
         assertEquals(0.1, new RandomAccess(
                 new byte[] { (byte) 0x9a, (byte) 0x99, (byte) 0x99, (byte) 0x99, (byte) 0x99, (byte) 0x99, (byte) 0xb9, (byte) 0x3f }).leDouble(), 0.0);
+    }
+
+    @Test
+    public void shouldParseBCD() {
+        assertEquals("000", new RandomAccess(new byte[] { 0x00, 0x00 }).binaryCodedDecimal(2, 3, 0));
+        assertEquals("0.00", new RandomAccess(new byte[] { 0x00, 0x00 }).binaryCodedDecimal(2, 1, 2));
+        assertEquals("000.00", new RandomAccess(new byte[] { 0x00, 0x00, 0x00 }).binaryCodedDecimal(3, 3, 2));
+        assertEquals("1.23", new RandomAccess(new byte[] { 0x01, 0x23 }).binaryCodedDecimal(2, 1, 2));
+        assertEquals("-1.23", new RandomAccess(new byte[] { (byte) 0xF1, 0x23 }).binaryCodedDecimal(2, 1, 2));
     }
 }

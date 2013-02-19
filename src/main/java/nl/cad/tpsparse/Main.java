@@ -447,6 +447,7 @@ public class Main {
 
     private static void info(File sourceFile, Map<Integer, TableDefinitionRecord> tableDefinitions) {
         StringBuilder sb = new StringBuilder();
+        String type = "";
         sb.append(sourceFile.getName() + " : contains " + tableDefinitions.size() + " table(s).\n");
         for (Map.Entry<Integer, TableDefinitionRecord> table : tableDefinitions.entrySet()) {
             TableDefinitionRecord def = table.getValue();
@@ -454,8 +455,12 @@ public class Main {
                     + " Memos, " + def.getRecordLength() + " bytes per row, driver version " + def.getDriverVersion() + ".\n");
             for (int t = 0; t < def.getFields().size(); t++) {
                 FieldDefinitionRecord field = def.getFields().get(t);
-                sb.append("Field '" + field.getFieldName() + "' of " + field.getFieldTypeName() + " at offset " + field.getOffset() + ", " + field.getLength()
-                        + " bytes\n");
+                if (field.isArray()) {
+                    type = " array[" + field.getNrOfElements() + "] of " + field.getFieldTypeName();
+                } else {
+                    type = " of type " + field.getFieldTypeName();
+                }
+                sb.append("Field '" + field.getFieldName() + "'" + type + " at offset " + field.getOffset() + ", " + field.getLength() + " bytes\n");
             }
             for (int t = 0; t < def.getIndexes().size(); t++) {
                 IndexDefinitionRecord field = def.getIndexes().get(t);

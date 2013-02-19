@@ -365,4 +365,17 @@ public class RandomAccess {
         return sb.toString();
     }
 
+    public String binaryCodedDecimal(int len, int totalDigits, int digitsAfterDecimalPoint) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : readBytes(len)) {
+            sb.append(toHex2(b & 0xFF));
+        }
+        String sign = sb.substring(0, 1);
+        String number = sb.substring(1);
+        if (digitsAfterDecimalPoint > 0) {
+            number = number.substring(number.length() - digitsAfterDecimalPoint - totalDigits, number.length() - digitsAfterDecimalPoint) + "."
+                    + number.substring(number.length() - digitsAfterDecimalPoint);
+        }
+        return (!sign.equals("0") ? "-" : "") + number;
+    }
 }

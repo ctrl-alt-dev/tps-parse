@@ -132,9 +132,31 @@ public class CsvWriter {
             return ((LocalDate) value).toString("yyyy-MM-dd");
         } else if (value instanceof LocalTime) {
             return ((LocalTime) value).toString("HH:mm");
+        } else if (value.getClass().isArray()) {
+            return toArrayString((Object[]) value);
         } else {
             return String.valueOf(value);
         }
+    }
+
+    /**
+     * there is no real place for arrays in CSV, but as it may
+     * be stored in TPS we have to do something with it. So
+     * we surround it with square brackets and put pipes in between.
+     * @param value the array value.
+     * @return the string representation of the array.
+     */
+    private String toArrayString(Object[] value) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int t = 0; t < value.length; t++) {
+            if (t > 0) {
+                sb.append("|");
+            }
+            sb.append(toString(value[t]));
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     /**

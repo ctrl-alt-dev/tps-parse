@@ -88,15 +88,24 @@ public class TableDefinitionRecord {
         RandomAccess rx = new RandomAccess(record);
         List<Object> values = new ArrayList<Object>(fields.size());
         for (int t = 0; t < fields.size(); t++) {
-            int type = fields.get(t).getFieldType();
-            int ofs = fields.get(t).getOffset();
-            int len = fields.get(t).getLength();
-            values.add(parseField(type, ofs, len, rx));
+            FieldDefinitionRecord field = fields.get(t);
+            int type = field.getFieldType();
+            int ofs = field.getOffset();
+            int len = field.getLength();
+            if (field.isArray()) {
+                Object[] arr = new Object[field.getNrOfElements()];
+                for (int y = 0; y < arr.length; y++) {
+                    arr[y] = parseField(type, ofs, len / arr.length, field, rx);
+                }
+                values.add(arr);
+            } else {
+                values.add(parseField(type, ofs, len, field, rx));
+            }
         }
         return values;
     }
 
-    public Object parseField(int type, int ofs, int len, RandomAccess rx) {
+    public Object parseField(int type, int ofs, int len, FieldDefinitionRecord field, RandomAccess rx) {
         rx.jumpAbs(ofs);
         switch (type) {
         case 1:
@@ -152,8 +161,7 @@ public class TableDefinitionRecord {
             return rx.leDouble();
         case 0x0A:
             // BCD encoded.
-            // No sample data available.
-            throw new IllegalArgumentException("BCD encoded data is not (yet) supported.");
+            return rx.binaryCodedDecimal(len, field.getBcdLengthOfElement(), field.getBcdDigitsAfterDecimalPoint());
         case 0x12:
             // Fixed Length String
             return rx.fixedLengthString(len);

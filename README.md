@@ -15,6 +15,11 @@ Typical use:
 
 Read the [blogpost](http://blog.42.nl/articles/liberating-data-from-clarion-tps-files).
 
+V1.0.5 19 Feb 2013
+------------------
+- Support for BCD fields
+- Support for Array fields
+
 V1.0.4 21 Jan 2013
 ------------------
 - Move to GITHUB 

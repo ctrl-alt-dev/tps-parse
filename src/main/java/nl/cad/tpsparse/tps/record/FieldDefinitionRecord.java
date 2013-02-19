@@ -75,6 +75,14 @@ public class FieldDefinitionRecord {
         return fieldName;
     }
 
+    public int getNrOfElements() {
+        return elements;
+    }
+
+    public boolean isArray() {
+        return elements > 1;
+    }
+
     public String getFieldNameNoTable() {
         int idx = fieldName.indexOf(':');
         if (idx >= 0) {
