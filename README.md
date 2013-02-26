@@ -1,7 +1,7 @@
 tps-parse
 =========
 
-Library for parsing Clarion TPS files. Also contains TPS to CSV converter.
+Library for parsing Clarion TPS files. Also contains a TPS to CSV converter.
 
 (C) 2012-2013 E.Hooijmeijer, [Apache 2 licensed](https://www.apache.org/licenses/LICENSE-2.0.html)
 
@@ -15,10 +15,43 @@ Typical use:
 
 Read the [blogpost](http://blog.42.nl/articles/liberating-data-from-clarion-tps-files).
 
-V1.0.5 19 Feb 2013
+Download the [binary](http://www.ctrl-alt-dev.nl/Projects/TPS-to-CSV/TPS-to-CSV.html).
+
+Sample code
+-----------
+
+```java
+    //
+    // Read the TPS file
+    //
+    TpsFile tpsFile = new TpsFile(new File("datafile.tps"));
+    //
+    // TPS files can contain multiple tables (commonly only one is used).
+    //
+    Map<Integer, TableDefinitionRecord> tables = tpsFile.getTableDefinitions(false);
+    for (Map.Entry<Integer, TableDefinitionRecord> entry : tables.entrySet()) {
+        TableDefinitionRecord table = entry.getValue();
+        //
+        // For each table get the field definition (columns).
+        //
+        for (FieldDefinitionRecord field : table.getFields()) {
+            // Do something with the field definition.
+        }
+        //
+        // And data records (rows).
+        //
+        for (DataRecord rec : tpsFile.getDataRecords(entry.getKey(), entry.getValue(), false)) {
+            // Do something with the data record.
+        }
+    }
+```
+
+
+V1.0.5 26 Feb 2013
 ------------------
 - Support for BCD fields
 - Support for Array fields
+- Expand Array fields into multiple CSV columns
 
 V1.0.4 21 Jan 2013
 ------------------
