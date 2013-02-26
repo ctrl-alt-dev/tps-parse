@@ -169,7 +169,14 @@ public class Main {
                     TableDefinitionRecord def = table.getValue();
                     csv.addColumn("Rec No");
                     for (FieldDefinitionRecord field : def.getFields()) {
-                        csv.addColumn(toCsvName(getFieldPrefix(def.getFields(), field) + field.getFieldNameNoTable()), field.isGroup());
+                        String csvName = toCsvName(getFieldPrefix(def.getFields(), field) + field.getFieldNameNoTable());
+                        if (field.isArray()) {
+                            for (int idx = 0; idx < field.getNrOfElements(); idx++) {
+                                csv.addColumn(csvName + "[" + idx + "]", field.isGroup());
+                            }
+                        } else {
+                            csv.addColumn(csvName, field.isGroup());
+                        }
                     }
                     for (MemoDefinitionRecord memo : def.getMemos()) {
                         csv.addColumn(toCsvName(memo.getName()));
@@ -402,8 +409,19 @@ public class Main {
     private static void onRecord(Map.Entry<Integer, TableDefinitionRecord> table, CsvWriter csv, List<List<MemoRecord>> memos, DataRecord rec) {
         int recordNumber = rec.getRecordNumber();
         csv.addCell(recordNumber);
-        for (Object value : rec.getValues()) {
-            csv.addCell(value);
+        List<FieldDefinitionRecord> fields = table.getValue().getFields();
+        List<Object> values = rec.getValues();
+        for (int t = 0; t < values.size(); t++) {
+            FieldDefinitionRecord field = fields.get(t);
+            Object value = values.get(t);
+            if (field.isArray()) {
+                Object[] arr = (Object[]) value;
+                for (int idx = 0; idx < field.getNrOfElements(); idx++) {
+                    csv.addCell(arr[idx]);
+                }
+            } else {
+                csv.addCell(value);
+            }
         }
         for (int t = 0; t < table.getValue().getMemos().size(); t++) {
             List<MemoRecord> list = memos.get(t);
