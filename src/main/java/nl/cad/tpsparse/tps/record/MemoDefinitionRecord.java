@@ -48,6 +48,18 @@ public class MemoDefinitionRecord {
         return name;
     }
 
+    public int getFlags() {
+        return flags;
+    }
+
+    public boolean isMemo() {
+        return (flags & 0x04) == 0;
+    }
+
+    public boolean isBlob() {
+        return (flags & 0x04) != 0;
+    }
+
     @Override
     public String toString() {
         return "MemoDefinition(" + externalFile + "," + name + "," + length + "," + flags + ")";

@@ -17,6 +17,7 @@ package nl.cad.tpsparse;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,8 +45,8 @@ import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.converters.FileConverter;
 
 /**
- * Converts TPS files into CSV files.
- * Also displays various information on a TPS file.
+ * Converts TPS files into CSV files. Also displays various information on a TPS
+ * file.
  * @author E.Hooijmeijer
  */
 public class Main {
@@ -247,7 +248,7 @@ public class Main {
     }
 
     /**
-     * compares two csv files. 
+     * compares two csv files.
      * @param generated the generated file.
      * @param compareTo the file to compare to.
      */
@@ -424,11 +425,18 @@ public class Main {
             }
         }
         for (int t = 0; t < table.getValue().getMemos().size(); t++) {
+            MemoDefinitionRecord def = table.getValue().getMemos().get(t);
             List<MemoRecord> list = memos.get(t);
             boolean found = false;
             for (MemoRecord memo : list) {
                 if (memo.getOwner() == recordNumber) {
-                    csv.addCell(memo.getDataAsString());
+                    if (def.isMemo()) {
+                        csv.addCell(memo.getDataAsMemo());
+                    } else {
+                        String fileName = recordNumber + "-" + t + ".bin";
+                        csv.addCell(fileName);
+                        writeFile(fileName, memo.getDataAsBlob());
+                    }
                     found = true;
                 }
             }
@@ -437,6 +445,23 @@ public class Main {
             }
         }
         csv.newRow();
+    }
+
+    private static void writeFile(String fileName, byte[] data) {
+        File file = new File(fileName);
+        if (file.exists()) {
+            throw new IllegalArgumentException("File '" + fileName + "' already exists.");
+        }
+        try {
+            FileOutputStream out = new FileOutputStream(file);
+            try {
+                out.write(data);
+            } finally {
+                out.close();
+            }
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Error writing " + fileName, ex);
+        }
     }
 
     private static void index(TpsFile tps, Map<Integer, TableDefinitionRecord> tableDefinitions) {
@@ -489,7 +514,7 @@ public class Main {
             }
             for (int t = 0; t < def.getMemos().size(); t++) {
                 MemoDefinitionRecord field = def.getMemos().get(t);
-                sb.append("Memo  '" + field.getName() + "'\n");
+                sb.append("Memo  '" + field.getName() + "' with flags " + field.getFlags() + " \n");
             }
         }
         System.out.println(sb.toString());

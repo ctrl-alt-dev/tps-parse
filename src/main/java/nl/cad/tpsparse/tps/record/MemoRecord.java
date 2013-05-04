@@ -40,8 +40,13 @@ public class MemoRecord {
         return header.getOwningRecord();
     }
 
-    public String getDataAsString() {
+    public String getDataAsMemo() {
         return new String(data.data(), Charset.forName("ISO-8859-1"));
+    }
+
+    public byte[] getDataAsBlob() {
+        int length = data.leLong();
+        return data.readBytes(length);
     }
 
     public RandomAccess getData() {

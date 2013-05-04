@@ -46,6 +46,9 @@ Sample code
     }
 ```
 
+V1.0.6 04 May 2013
+------------------
+- Support for Binary Memo's (aka BLOBs)
 
 V1.0.5 26 Feb 2013
 ------------------
