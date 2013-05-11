@@ -22,9 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Allows random-access reading of primitives from byte array.  
- * Supports little endian and big endian integer formats.
- * IEEE floating point and various styles of strings.
+ * Allows random-access reading of primitives from byte array. Supports little
+ * endian and big endian integer formats. IEEE floating point and various styles
+ * of strings.
  * @author E.Hooijmeijer
  */
 public class RandomAccess {
@@ -36,6 +36,14 @@ public class RandomAccess {
     public RandomAccess(byte[] data) {
         this.ofs = 0;
         this.data = data;
+    }
+
+    public RandomAccess(String hex) {
+        String[] bytes = hex.split(" ");
+        data = new byte[bytes.length];
+        for (int t = 0; t < data.length; t++) {
+            data[t] = (byte) Integer.parseInt(bytes[t], 16);
+        }
     }
 
     /**
@@ -59,10 +67,24 @@ public class RandomAccess {
     public int leLong() {
         int out = (data[ofs] & 0xFF) | ((data[ofs + 1] & 0xFF) << 8) | ((data[ofs + 2] & 0xFF) << 16) | ((data[ofs + 3] & 0xFF) << 24);
         //
-        // For some records it seems that 1s complement is used to encode negative numbers ?!
+        // For some records it seems that 1s complement is used to encode
+        // negative numbers ?!
         //
         ofs += 4;
         return out;
+    }
+
+    /**
+     * writes a 4 byte little endian value to the current position. Used when
+     * decrypting.
+     * @param value the value.
+     */
+    public void setLeLong(int value) {
+        data[ofs] = (byte) ((value >> 0) & 0xFF);
+        data[ofs + 1] = (byte) ((value >> 8) & 0xFF);
+        data[ofs + 2] = (byte) ((value >> 16) & 0xFF);
+        data[ofs + 3] = (byte) ((value >> 24) & 0xFF);
+        ofs += 4;
     }
 
     /**
@@ -168,8 +190,9 @@ public class RandomAccess {
         return new String(out.toByteArray(), Charset.forName("ISO-8859-1"));
     }
 
-    public void jumpAbs(int ofs) {
+    public RandomAccess jumpAbs(int ofs) {
         this.ofs = ofs;
+        return this;
     }
 
     public void jumpRel(int ofs) {
@@ -378,4 +401,5 @@ public class RandomAccess {
         }
         return (!sign.equals("0") ? "-" : "") + number;
     }
+
 }

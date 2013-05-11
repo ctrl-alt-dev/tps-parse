@@ -93,4 +93,15 @@ public class RandomAccessTest {
         assertEquals("1.23", new RandomAccess(new byte[] { 0x01, 0x23 }).binaryCodedDecimal(2, 1, 2));
         assertEquals("-1.23", new RandomAccess(new byte[] { (byte) 0xF1, 0x23 }).binaryCodedDecimal(2, 1, 2));
     }
+
+    @Test
+    public void leReadWriteTest() {
+        RandomAccess rx = new RandomAccess(new byte[] { 1, 2, 3, 4 });
+        int value = rx.leLong();
+        rx.jumpAbs(0);
+        rx.setLeLong(value);
+        rx.jumpAbs(0);
+        int value2 = rx.leLong();
+        assertEquals(value, value2);
+    }
 }

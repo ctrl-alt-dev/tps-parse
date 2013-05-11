@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import nl.cad.tpsparse.bin.RandomAccess;
+import nl.cad.tpsparse.decrypt.Key;
 import nl.cad.tpsparse.tps.header.AbstractHeader;
 import nl.cad.tpsparse.tps.header.DataHeader;
 import nl.cad.tpsparse.tps.header.IndexHeader;
@@ -38,32 +39,31 @@ import nl.cad.tpsparse.tps.record.IndexRecord;
 import nl.cad.tpsparse.tps.record.MemoRecord;
 import nl.cad.tpsparse.tps.record.TableDefinitionRecord;
 import nl.cad.tpsparse.tps.record.TableNameRecord;
+import nl.cad.tpsparse.util.Utils;
 
 /**
  * Main entry point for parsing the TPS File.
  * 
- * Constructs from file, stream and byte arrays.
- * Typical usage consists of retrieving first the table definitions and then
- * retrieving the records and memos.
+ * Constructs from file, stream and byte arrays. Typical usage consists of
+ * retrieving first the table definitions and then retrieving the records and
+ * memos.
  * 
- * The TPS File consists of a TpsHeader section (the first 0x200 bytes)
- * followed by a number of TpsBlocks. These blocks are referenced in the
- * TpsHeader. Each TpsBlock consists of a number of TpsPages. I have
- * not been able to find any meta-data that points to the start of the
- * pages. The current algorithm works by beginning at the block start,
- * parsing the TpsPage and then seeking for the next TpsPage using its
- * offset in the file (always at a 0x0100 boundary and the value at that
- * address must have the same value as the offset). Far from perfect but
- * it seems to work.
+ * The TPS File consists of a TpsHeader section (the first 0x200 bytes) followed
+ * by a number of TpsBlocks. These blocks are referenced in the TpsHeader. Each
+ * TpsBlock consists of a number of TpsPages. I have not been able to find any
+ * meta-data that points to the start of the pages. The current algorithm works
+ * by beginning at the block start, parsing the TpsPage and then seeking for the
+ * next TpsPage using its offset in the file (always at a 0x0100 boundary and
+ * the value at that address must have the same value as the offset). Far from
+ * perfect but it seems to work.
  * 
- * A TpsPage consists of a number of TpsRecords which hold the actual data.
- * The Page itself is used to group and compress (using Run Length Encoding)
- * the TpsRecords.
+ * A TpsPage consists of a number of TpsRecords which hold the actual data. The
+ * Page itself is used to group and compress (using Run Length Encoding) the
+ * TpsRecords.
  * 
- * There are a number of records types each defined by their header.
- * The following record types are implemented:
- * - TableDefinition, holding the table meta data, such as columns.
- * - Memo, holding the data of a single memo field.
+ * There are a number of records types each defined by their header. The
+ * following record types are implemented: - TableDefinition, holding the table
+ * meta data, such as columns. - Memo, holding the data of a single memo field.
  * - DataRecords, holding the data of a single row.
  * 
  * @author E.Hooijmeijer
@@ -105,12 +105,32 @@ public class TpsFile {
     }
 
     /**
+     * constructs a new TpsFile from the given file.
+     * @param file the file.
+     * @param owner the owner id, also known as the password.
+     * @throws IOException when reading the file fails.
+     */
+    public TpsFile(File file, String owner) throws IOException {
+        this(new FileInputStream(file), owner);
+    }
+
+    /**
      * constructs a new TpsFile from the given inputstream.
      * @param in the inputstream.
      * @throws IOException when reading the file fails.
      */
     public TpsFile(InputStream in) throws IOException {
-        this(readFully(in));
+        this(Utils.readFully(in));
+    }
+
+    /**
+     * constructs a new TpsFile from the given inputstream.
+     * @param in the inputstream.
+     * @param owner the owner id, also known as the password.
+     * @throws IOException when reading the file fails.
+     */
+    public TpsFile(InputStream in, String owner) throws IOException {
+        this(Utils.readFully(in), owner);
     }
 
     /**
@@ -119,6 +139,28 @@ public class TpsFile {
      */
     public TpsFile(byte[] data) {
         this(new RandomAccess(data));
+    }
+
+    /**
+     * constructs a new TpsFile from the given byte array.
+     * @param owner the owner id, also known as the password.
+     * @param data the byte array.
+     */
+    public TpsFile(byte[] data, String owner) {
+        Key key = new Key(owner).init();
+        key.decrypt(data, 0, 0x200);
+        this.read = new RandomAccess(data);
+        TpsHeader hdr = getHeader();
+        for (int t = 0; t < hdr.getPageStart().length; t++) {
+            int ofs = hdr.getPageStart()[t];
+            int end = hdr.getPageEnd()[t];
+            //
+            if (((ofs == 0x0200) && (end == 0x200)) || (ofs >= read.length())) {
+                continue;
+            } else {
+                key.decrypt(data, ofs, end - ofs);
+            }
+        }
     }
 
     /**
@@ -153,7 +195,8 @@ public class TpsFile {
         for (int t = 0; t < hdr.getPageStart().length; t++) {
             int ofs = hdr.getPageStart()[t];
             int end = hdr.getPageEnd()[t];
-            // Skips the first entry (0 length) and any blocks that are beyond the file size.
+            // Skips the first entry (0 length) and any blocks that are beyond
+            // the file size.
             if (((ofs == 0x0200) && (end == 0x200)) || (ofs >= read.length())) {
                 continue;
             } else {
@@ -164,7 +207,8 @@ public class TpsFile {
     }
 
     /**
-     * visits all the TpsRecords in the file by traversing the Block, Page and Record hierarchy.
+     * visits all the TpsRecords in the file by traversing the Block, Page and
+     * Record hierarchy.
      * @param v the visitor.
      */
     public void visit(Visitor v) {
@@ -172,7 +216,8 @@ public class TpsFile {
     }
 
     /**
-     * visits all the TpsRecords in the file by traversing the Block, Page and Record hierarchy.
+     * visits all the TpsRecords in the file by traversing the Block, Page and
+     * Record hierarchy.
      * @param v the visitor.
      * @param ignoreErrors ignores any page parse errors (at your own peril!).
      */
@@ -315,11 +360,12 @@ public class TpsFile {
     }
 
     /**
-     * retrieves all memo records for a given table and memo field.
-     * Long Memo fields are not stored in one record, they are spread out among multiple.
+     * retrieves all memo records for a given table and memo field. Long Memo
+     * fields are not stored in one record, they are spread out among multiple.
      * So here we need to group and join them together.
      * @param tableNr the table number.
-     * @param memoIdx the memo index (as a table may have multiple memo fields, zero based).
+     * @param memoIdx the memo index (as a table may have multiple memo fields,
+     * zero based).
      * @param ignoreErrors ignores any page parse errors.
      * @return the memo records.
      */
@@ -367,9 +413,9 @@ public class TpsFile {
     }
 
     /**
-     * retrieves all table definitions in the TpsFile.
-     * For each table (there can be more than one, although one is most common) the table
-     * definition records are grouped together (as they're spread over multiple records)
+     * retrieves all table definitions in the TpsFile. For each table (there can
+     * be more than one, although one is most common) the table definition
+     * records are grouped together (as they're spread over multiple records)
      * and then merged. From that the actual table definition is built.
      * @param ignoreErrors ignores any errors.
      * @return the table definitions.
@@ -418,18 +464,8 @@ public class TpsFile {
         return new RandomAccess(out.toByteArray());
     }
 
-    //
-    //
-    //
-
-    private static byte[] readFully(InputStream in) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buffer = new byte[8192];
-        int rd = 0;
-        while ((rd = in.read(buffer)) >= 0) {
-            out.write(buffer, 0, rd);
-        }
-        return out.toByteArray();
+    public byte[] getBytes() {
+        return read.data();
     }
 
 }

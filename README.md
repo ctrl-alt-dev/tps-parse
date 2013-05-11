@@ -46,6 +46,16 @@ Sample code
     }
 ```
 
+Example for an encrypted TPS file:
+
+```java
+    TpsFile tpsFile = new TpsFile(new File("datafile.tps"), "password");
+```
+
+V1.0.7 11 May 2013
+------------------
+- Support for encrypted files.
+
 V1.0.6 04 May 2013
 ------------------
 - Support for Binary Memo's (aka BLOBs)

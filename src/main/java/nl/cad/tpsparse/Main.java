@@ -27,6 +27,7 @@ import java.util.TreeMap;
 import nl.cad.tpsparse.csv.CsvFile;
 import nl.cad.tpsparse.csv.CsvReader;
 import nl.cad.tpsparse.csv.CsvWriter;
+import nl.cad.tpsparse.tps.NotATopSpeedFileException;
 import nl.cad.tpsparse.tps.TpsBlock;
 import nl.cad.tpsparse.tps.TpsFile;
 import nl.cad.tpsparse.tps.TpsFile.DetailVisitor;
@@ -38,6 +39,8 @@ import nl.cad.tpsparse.tps.record.IndexDefinitionRecord;
 import nl.cad.tpsparse.tps.record.MemoDefinitionRecord;
 import nl.cad.tpsparse.tps.record.MemoRecord;
 import nl.cad.tpsparse.tps.record.TableDefinitionRecord;
+
+import org.apache.commons.lang.StringUtils;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -83,6 +86,8 @@ public class Main {
         private File compareToFile;
         @Parameter(names = { "-raw" }, description = "Don't attempt any character encoding, output the bytes as is.")
         private boolean raw = false;
+        @Parameter(names = { "-owner", "-password" }, description = "specify the owner/password for the tps file.")
+        private String password;
     }
 
     public static void main(String[] args) {
@@ -145,7 +150,7 @@ public class Main {
      * @throws IOException if reading/writing fails.
      */
     private static void parseFile(Args args) throws IOException {
-        TpsFile tpsFile = new TpsFile(args.sourceFile);
+        TpsFile tpsFile = openFile(args);
         //
         try {
             Map<Integer, TableDefinitionRecord> tableDefinitions = tpsFile.getTableDefinitions(args.ignoreErrors);
@@ -243,6 +248,21 @@ public class Main {
             System.err.println(args.sourceFile.getName() + " : " + ex.getMessage());
             if (args.stackTraces) {
                 ex.printStackTrace();
+            }
+        }
+    }
+
+    private static TpsFile openFile(Args args) throws IOException {
+        try {
+            TpsFile tpsFile = new TpsFile(args.sourceFile);
+            tpsFile.getHeader();
+            return tpsFile;
+        } catch (NotATopSpeedFileException ex) {
+            if (!StringUtils.isEmpty(args.password)) {
+                System.out.println("Encrypted file, using set password.");
+                return new TpsFile(args.sourceFile, args.password);
+            } else {
+                throw ex;
             }
         }
     }
