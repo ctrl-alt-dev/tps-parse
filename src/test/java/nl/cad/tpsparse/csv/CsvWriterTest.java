@@ -28,7 +28,7 @@ public class CsvWriterTest {
 
     @Test
     public void shouldIgnoreColums() {
-        CsvWriter wr = new CsvWriter(',', '"');
+        CsvWriter wr = new BufferingCsvWriter(',', '"');
         wr.addColumn("a", false);
         wr.addColumn("b", true);
         wr.addColumn("c", false);
@@ -43,7 +43,7 @@ public class CsvWriterTest {
 
     @Test
     public void shouldEscapeQuotes() {
-        CsvWriter wr = new CsvWriter(',', '"');
+        CsvWriter wr = new BufferingCsvWriter(',', '"');
         wr.addColumn("a");
         wr.addColumn("b");
         wr.addColumn("c");

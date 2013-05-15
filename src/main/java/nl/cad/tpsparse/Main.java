@@ -17,27 +17,27 @@ package nl.cad.tpsparse;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
+import nl.cad.tpsparse.convert.AbstractTpsToCsv;
+import nl.cad.tpsparse.convert.BufferingTpsToCsv;
+import nl.cad.tpsparse.convert.StreamingTpsToCsv;
+import nl.cad.tpsparse.csv.BufferingCsvWriter;
+import nl.cad.tpsparse.csv.CsvDiff;
 import nl.cad.tpsparse.csv.CsvFile;
 import nl.cad.tpsparse.csv.CsvReader;
 import nl.cad.tpsparse.csv.CsvWriter;
+import nl.cad.tpsparse.csv.ImmediateCsvWriter;
 import nl.cad.tpsparse.tps.NotATopSpeedFileException;
 import nl.cad.tpsparse.tps.TpsBlock;
 import nl.cad.tpsparse.tps.TpsFile;
 import nl.cad.tpsparse.tps.TpsFile.DetailVisitor;
 import nl.cad.tpsparse.tps.TpsPage;
 import nl.cad.tpsparse.tps.TpsRecord;
-import nl.cad.tpsparse.tps.record.DataRecord;
 import nl.cad.tpsparse.tps.record.FieldDefinitionRecord;
 import nl.cad.tpsparse.tps.record.IndexDefinitionRecord;
 import nl.cad.tpsparse.tps.record.MemoDefinitionRecord;
-import nl.cad.tpsparse.tps.record.MemoRecord;
 import nl.cad.tpsparse.tps.record.TableDefinitionRecord;
 
 import org.apache.commons.lang.StringUtils;
@@ -64,8 +64,6 @@ public class Main {
         private boolean info;
         @Parameter(names = "-idx", description = "displays the record ids for the available indexes.")
         private boolean index;
-        @Parameter(names = "-sort", description = "sorts the records on their row number. Otherwise you'll get the sequence as they are in the file.")
-        private boolean sort;
         @Parameter(names = "-layout", description = "displays the file layout.")
         private boolean layout;
         @Parameter(names = "-e", description = "shows stacktraces.")
@@ -88,6 +86,10 @@ public class Main {
         private boolean raw = false;
         @Parameter(names = { "-owner", "-password" }, description = "specify the owner/password for the tps file.")
         private String password;
+        @Parameter(names = { "-direct" }, description = "writes directly to file without buffering, useful for large files. Doesn't sort.")
+        private boolean direct = false;
+        @Parameter(names = { "-verbose" }, description = "more verbose output.")
+        private boolean verbose = false;
     }
 
     public static void main(String[] args) {
@@ -171,75 +173,23 @@ public class Main {
                 //
                 for (Map.Entry<Integer, TableDefinitionRecord> table : tableDefinitions.entrySet()) {
                     //
-                    CsvWriter csv = new CsvWriter(args.separator, args.quoteCharacter);
-                    TableDefinitionRecord def = table.getValue();
-                    csv.addColumn("Rec No");
-                    for (FieldDefinitionRecord field : def.getFields()) {
-                        String csvName = toCsvName(getFieldPrefix(def.getFields(), field) + field.getFieldNameNoTable());
-                        if (field.isArray()) {
-                            for (int idx = 0; idx < field.getNrOfElements(); idx++) {
-                                csv.addColumn(csvName + "[" + idx + "]", field.isGroup());
-                            }
+                    CsvWriter csv = openOutputCsvFile(args, tableDefinitions, table);
+                    try {
+                        AbstractTpsToCsv tpsToCsv = null;
+                        if (args.direct) {
+                            tpsToCsv = new StreamingTpsToCsv(args.sourceFile, args.targetFile, csv, tpsFile, table);
                         } else {
-                            csv.addColumn(csvName, field.isGroup());
+                            tpsToCsv = new BufferingTpsToCsv(args.sourceFile, args.targetFile, csv, tpsFile, table);
                         }
-                    }
-                    for (MemoDefinitionRecord memo : def.getMemos()) {
-                        csv.addColumn(toCsvName(memo.getName()));
-                    }
-                    csv.newRow();
-                    //
-                    // Prefetch memo's.
-                    //
-                    List<List<MemoRecord>> memos = new ArrayList<List<MemoRecord>>();
-                    for (int t = 0; t < table.getValue().getMemos().size(); t++) {
-                        memos.add(tpsFile.getMemoRecords(table.getKey(), t, args.ignoreErrors));
-                    }
-                    //
-                    Map<Integer, DataRecord> recordsById = new TreeMap<Integer, DataRecord>();
-                    //
-                    for (DataRecord rec : tpsFile.getDataRecords(table.getKey(), table.getValue(), args.ignoreErrors)) {
-                        int recordNumber = rec.getRecordNumber();
-                        if (!recordsById.containsKey(recordNumber)) {
-                            recordsById.put(recordNumber, rec);
-                        } else {
-                            System.err.println(args.sourceFile.getName() + ": Duplicate record " + recordNumber);
-                        }
-                    }
-                    //
-                    if (args.sort) {
-                        for (Map.Entry<Integer, DataRecord> entry : recordsById.entrySet()) {
-                            DataRecord rec = entry.getValue();
-                            onRecord(table, csv, memos, rec);
-                        }
-                    } else {
-                        for (DataRecord rec : tpsFile.getDataRecords(table.getKey(), table.getValue(), args.ignoreErrors)) {
-                            onRecord(table, csv, memos, rec);
-                        }
-                    }
-                    //
-                    if (tableDefinitions.size() == 1) {
-                        if (args.raw) {
-                            csv.writeRaw(args.targetFile);
-                        } else {
-                            csv.writeToFile(args.targetFile, args.encoding);
-                        }
-                    } else {
-                        File parentFile = args.targetFile.getParentFile();
-                        String name = args.targetFile.getName();
-                        File target = new File(parentFile, name.substring(0, name.lastIndexOf('.')) + "." + table.getKey() + ".csv");
-                        if (args.raw) {
-                            csv.writeRaw(target);
-                        } else {
-                            csv.writeToFile(target, args.encoding);
-                        }
+                        tpsToCsv.setIgnoreErrors(args.ignoreErrors);
+                        tpsToCsv.setVerbose(args.verbose);
+                        tpsToCsv.run();
+                    } finally {
+                        finishCsvFile(args, tableDefinitions, table, csv);
                     }
                     //
                     if ((args.compareToFile != null) && (tableDefinitions.size() == 1)) {
-                        System.out.println("Diff of " + args.targetFile + " v.s " + args.compareToFile);
-                        CsvFile generated = new CsvReader(args.separator, args.quoteCharacter).read(args.targetFile, args.encoding);
-                        CsvFile compareTo = new CsvReader(args.separator, args.quoteCharacter).read(args.compareToFile, args.encoding);
-                        compareCsv(generated, compareTo);
+                        runDiff(args);
                     }
                     //
                 }
@@ -252,8 +202,69 @@ public class Main {
         }
     }
 
+    private static void runDiff(Args args) throws IOException {
+        System.out.println("Diff of " + args.targetFile + " v.s " + args.compareToFile + " : ");
+        CsvFile generated = new CsvReader(args.separator, args.quoteCharacter).read(args.targetFile, args.encoding);
+        CsvFile compareTo = new CsvReader(args.separator, args.quoteCharacter).read(args.compareToFile, args.encoding);
+        CsvDiff diff = new CsvDiff();
+        if (!diff.compareCsv(generated, compareTo)) {
+            for (String error : diff.getErrors()) {
+                System.err.println(" " + error);
+            }
+        } else {
+            System.out.println(" No (real) differences.");
+        }
+    }
+
+    private static CsvWriter openOutputCsvFile(Args args, Map<Integer, TableDefinitionRecord> tableDefinitions, Map.Entry<Integer, TableDefinitionRecord> table)
+            throws IOException {
+        CsvWriter csv = null;
+        if (args.direct) {
+            if (tableDefinitions.size() == 1) {
+                csv = new ImmediateCsvWriter(args.separator, args.quoteCharacter, args.targetFile, args.encoding);
+            } else {
+                csv = new ImmediateCsvWriter(args.separator, args.quoteCharacter, buildTargetFile(args, table), args.encoding);
+            }
+        } else {
+            csv = new BufferingCsvWriter(args.separator, args.quoteCharacter);
+        }
+        return csv;
+    }
+
+    private static void finishCsvFile(Args args, Map<Integer, TableDefinitionRecord> tableDefinitions, Map.Entry<Integer, TableDefinitionRecord> table,
+            CsvWriter csv) throws IOException {
+        if (csv instanceof BufferingCsvWriter) {
+            if (tableDefinitions.size() == 1) {
+                if (args.raw) {
+                    ((BufferingCsvWriter) csv).writeRaw(args.targetFile);
+                } else {
+                    ((BufferingCsvWriter) csv).writeToFile(args.targetFile, args.encoding);
+                }
+            } else {
+                File target = buildTargetFile(args, table);
+                if (args.raw) {
+                    ((BufferingCsvWriter) csv).writeRaw(target);
+                } else {
+                    ((BufferingCsvWriter) csv).writeToFile(target, args.encoding);
+                }
+            }
+        } else {
+            ((ImmediateCsvWriter) csv).close();
+        }
+    }
+
+    private static File buildTargetFile(Args args, Map.Entry<Integer, TableDefinitionRecord> table) {
+        File parentFile = args.targetFile.getParentFile();
+        String name = args.targetFile.getName();
+        File target = new File(parentFile, name.substring(0, name.lastIndexOf('.')) + "." + table.getKey() + ".csv");
+        return target;
+    }
+
     private static TpsFile openFile(Args args) throws IOException {
         try {
+            if (args.verbose) {
+                System.out.println("Opening " + args.sourceFile);
+            }
             TpsFile tpsFile = new TpsFile(args.sourceFile);
             tpsFile.getHeader();
             return tpsFile;
@@ -264,223 +275,6 @@ public class Main {
             } else {
                 throw ex;
             }
-        }
-    }
-
-    /**
-     * compares two csv files.
-     * @param generated the generated file.
-     * @param compareTo the file to compare to.
-     */
-    private static void compareCsv(CsvFile generated, CsvFile compareTo) {
-        assertEquals("Number of header fields", compareTo.getHeader().length, generated.getHeader().length);
-        for (int t = 0; t < compareTo.getHeader().length; t++) {
-            assertEquals("Header field.", compareTo.getHeader()[t], generated.getHeader()[t]);
-        }
-        assertEquals("Number of rows", compareTo.getRows().size(), generated.getRows().size());
-        List<String> spurious = findMissingIds(generated, compareTo);
-        if (!spurious.isEmpty()) {
-            System.err.println("Spurious Row Ids : " + spurious);
-        }
-        List<String> missing = findMissingIds(compareTo, generated);
-        if (!missing.isEmpty()) {
-            System.err.println("Missing Row Ids : " + missing);
-        }
-        int genRow = 0;
-        int cmpRow = 0;
-        do {
-            String[] row = generated.getRows().get(genRow);
-            String[] cmp = compareTo.getRows().get(cmpRow);
-            //
-            while (spurious.contains(row[0].trim()) && cmpRow < generated.getRows().size() - 1) {
-                System.err.println("Skipping generated row " + genRow + " as its spurious.");
-                genRow++;
-                row = generated.getRows().get(genRow);
-            }
-            while (missing.contains(cmp[0].trim()) && cmpRow < compareTo.getRows().size() - 1) {
-                System.err.println("Skipping compare row " + cmpRow + " as its missing.");
-                cmpRow++;
-                cmp = compareTo.getRows().get(cmpRow);
-            }
-            //
-            if ((genRow < generated.getRows().size() && cmpRow < compareTo.getRows().size())) {
-                assertEquals("Row " + genRow + " number of cells", cmp.length, row.length);
-                for (int y = 0; y < row.length; y++) {
-                    assertSloppyEquals("Row G:" + genRow + "==C:" + cmpRow + ", Col " + y + " (" + compareTo.getHeader()[y] + ") equals", cmp[y], row[y]);
-                }
-            }
-            genRow++;
-            cmpRow++;
-        } while (genRow < generated.getRows().size() && cmpRow < compareTo.getRows().size());
-    }
-
-    /**
-     * scans for missing ids.
-     * @param generated the generated file.
-     * @param compareTo the file to compare to.
-     * @return a list of missing ids.
-     */
-    private static List<String> findMissingIds(CsvFile generated, CsvFile compareTo) {
-        List<String> sb = new ArrayList<String>();
-        for (int t = 0; t < generated.getRows().size(); t++) {
-            boolean found = false;
-            String rid = generated.getRows().get(t)[0].trim();
-            for (int y = 0; y < compareTo.getRows().size(); y++) {
-                String cmp = compareTo.getRows().get(y)[0].trim();
-                if (rid.equals(cmp)) {
-                    found = true;
-                }
-            }
-            if (!found) {
-                sb.add(rid);
-            }
-        }
-        return sb;
-    }
-
-    private static void assertSloppyEquals(String msg, String expect, String got) {
-        String sloppyExpect = toSloppy(expect);
-        String sloppyGot = toSloppy(got);
-        assertEquals(msg, sloppyExpect, sloppyGot);
-    }
-
-    private static String toSloppy(String expect) {
-        expect = expect.trim();
-        boolean isInt = true;
-        try {
-            Integer.parseInt(expect);
-        } catch (NumberFormatException ex) {
-            isInt = false;
-        }
-        if ((expect.indexOf('.') > 0) || (expect.indexOf(',') > 0) || isInt) {
-            try {
-                double d = Double.parseDouble(expect.replace(",", ""));
-                return Double.toString(d);
-            } catch (NumberFormatException ex) {
-            }
-        }
-        return expect;
-    }
-
-    private static void assertEquals(String msg, int expect, int got) {
-        if (expect != got) {
-            System.err.println(msg + ". expected " + expect + " got " + got);
-        }
-    }
-
-    private static void assertEquals(String msg, String expect, String got) {
-        if (!expect.equals(got)) {
-            System.err.println(msg + ". expected '" + expect + "' got '" + got + "'");
-            if (expect.length() > 128) {
-                assertEquals(" lengths differ: ", expect.length(), got.length());
-                int max = Math.min(expect.length(), got.length());
-                for (int t = 0; t < max; t++) {
-                    if (expect.charAt(t) != got.charAt(t)) {
-                        System.err.println(" First difference at position " + t + " char 0x" + Integer.toHexString(expect.charAt(t)) + " != 0x"
-                                + Integer.toHexString(got.charAt(t)));
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * @param fields all fields.
-     * @param field the field to get the prefix for.
-     * @return the field prefix if the field is in a group.
-     */
-    private static String getFieldPrefix(List<FieldDefinitionRecord> fields, FieldDefinitionRecord field) {
-        for (FieldDefinitionRecord f : fields) {
-            if (f.isGroup()) {
-                if (field.isInGroup(f)) {
-                    return f.getFieldNameNoTable() + ".";
-                }
-            }
-        }
-        return "";
-    }
-
-    /**
-     * @param name the name.
-     * @return the csv name.
-     */
-    private static String toCsvName(String name) {
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
-        for (int t = 0; t < name.length(); t++) {
-            char c = name.charAt(t);
-            if (first) {
-                sb.append(Character.toUpperCase(c));
-                first = false;
-            } else {
-                if (c == '_') {
-                    sb.append(' ');
-                } else {
-                    sb.append(Character.toLowerCase(c));
-                }
-            }
-            if (c == '_') {
-                first = true;
-            }
-        }
-        return sb.toString();
-    }
-
-    private static void onRecord(Map.Entry<Integer, TableDefinitionRecord> table, CsvWriter csv, List<List<MemoRecord>> memos, DataRecord rec) {
-        int recordNumber = rec.getRecordNumber();
-        csv.addCell(recordNumber);
-        List<FieldDefinitionRecord> fields = table.getValue().getFields();
-        List<Object> values = rec.getValues();
-        for (int t = 0; t < values.size(); t++) {
-            FieldDefinitionRecord field = fields.get(t);
-            Object value = values.get(t);
-            if (field.isArray()) {
-                Object[] arr = (Object[]) value;
-                for (int idx = 0; idx < field.getNrOfElements(); idx++) {
-                    csv.addCell(arr[idx]);
-                }
-            } else {
-                csv.addCell(value);
-            }
-        }
-        for (int t = 0; t < table.getValue().getMemos().size(); t++) {
-            MemoDefinitionRecord def = table.getValue().getMemos().get(t);
-            List<MemoRecord> list = memos.get(t);
-            boolean found = false;
-            for (MemoRecord memo : list) {
-                if (memo.getOwner() == recordNumber) {
-                    if (def.isMemo()) {
-                        csv.addCell(memo.getDataAsMemo());
-                    } else {
-                        String fileName = recordNumber + "-" + t + ".bin";
-                        csv.addCell(fileName);
-                        writeFile(fileName, memo.getDataAsBlob());
-                    }
-                    found = true;
-                }
-            }
-            if (!found) {
-                csv.addCell("");
-            }
-        }
-        csv.newRow();
-    }
-
-    private static void writeFile(String fileName, byte[] data) {
-        File file = new File(fileName);
-        if (file.exists()) {
-            throw new IllegalArgumentException("File '" + fileName + "' already exists.");
-        }
-        try {
-            FileOutputStream out = new FileOutputStream(file);
-            try {
-                out.write(data);
-            } finally {
-                out.close();
-            }
-        } catch (IOException ex) {
-            throw new IllegalArgumentException("Error writing " + fileName, ex);
         }
     }
 

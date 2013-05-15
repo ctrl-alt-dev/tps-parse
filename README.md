@@ -52,6 +52,13 @@ Example for an encrypted TPS file:
     TpsFile tpsFile = new TpsFile(new File("datafile.tps"), "password");
 ```
 
+V1.0.8 15 May 2013
+------------------
+- Streaming Support for large files.
+- Refactoring of TPS to CSV utility. 
+- removed sort option as its now implicit (use -direct to not sort).
+- added verbose option to have some sense of progress on large files.
+
 V1.0.7 11 May 2013
 ------------------
 - Support for encrypted files.

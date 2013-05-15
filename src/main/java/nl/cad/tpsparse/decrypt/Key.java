@@ -28,6 +28,10 @@ public class Key {
 
     private RandomAccess rx;
 
+    private Key() {
+        super();
+    }
+
     public Key(String key) {
         this(key.getBytes(Charset.forName("cp1258")));
     }
@@ -47,6 +51,12 @@ public class Key {
             block[tx] = (byte) ((t + (int) (keybytes[(t + 1) % keybytes.length] & 0xFF)) & 0xFF);
         }
         rx = new RandomAccess(block);
+    }
+
+    public static Key initializedKey(byte[] bytes) {
+        Key key = new Key();
+        key.rx = new RandomAccess(bytes);
+        return key;
     }
 
     /**
@@ -194,6 +204,15 @@ public class Key {
             System.arraycopy(buffer, 0, bytes, ofs + t * 64, 64);
         }
         return bytes;
+    }
+
+    @Override
+    public String toString() {
+        return rx.toHex(64, false);
+    }
+
+    public byte[] getBytes() {
+        return rx.data();
     }
 
 }

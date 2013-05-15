@@ -15,12 +15,6 @@
  */
 package nl.cad.tpsparse.csv;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,9 +25,9 @@ import org.joda.time.LocalTime;
  * Writes properly escaped and encoded CSV files.
  * @author E.Hooijmeijer
  */
-public class CsvWriter {
+public abstract class CsvWriter {
 
-    private StringBuilder out = new StringBuilder();
+    private StringBuilder line = new StringBuilder();
 
     private char sep;
     private char quot;
@@ -53,7 +47,7 @@ public class CsvWriter {
     }
 
     /**
-     * adds a column. 
+     * adds a column.
      * @param name the name of the column.
      * @param ignore if the column should be ignored in the output.
      */
@@ -71,7 +65,7 @@ public class CsvWriter {
         addColumn(name, false);
     }
 
-    /** 
+    /**
      * adds a cell value.
      * @param value the value.
      */
@@ -80,16 +74,19 @@ public class CsvWriter {
     }
 
     /**
-     * begins a new row.
-     * checks if the row has the expected amount of columns.
+     * begins a new row. checks if the row has the expected amount of columns.
      */
     public void newRow() {
         if (columns != currentColumn) {
             throw new IllegalArgumentException("Missing column " + columns + " != " + currentColumn);
         }
-        out.append(System.getProperty("line.separator"));
+        line.append(System.getProperty("line.separator"));
+        addRow(line.toString());
+        line.delete(0, line.length());
         currentColumn = 0;
     }
+
+    protected abstract void addRow(String row);
 
     /**
      * adds a single value to the csv, quotes and escapes it if needed.
@@ -99,21 +96,21 @@ public class CsvWriter {
         if (!ignoreColumn.get(currentColumn)) {
             String str = toString(value);
             if (currentColumn != 0) {
-                out.append(sep);
+                line.append(sep);
             }
             if (str != null) {
                 if ((str.indexOf(sep) >= 0) || (str.indexOf('\n') >= 0) || value instanceof String) {
-                    out.append(quot);
+                    line.append(quot);
                     for (int t = 0; t < str.length(); t++) {
-                        out.append(str.charAt(t));
+                        line.append(str.charAt(t));
                         // escape quotes by doubling them.
                         if (str.charAt(t) == quot) {
-                            out.append(quot);
+                            line.append(quot);
                         }
                     }
-                    out.append(quot);
+                    line.append(quot);
                 } else {
-                    out.append(str);
+                    line.append(str);
                 }
             }
         }
@@ -137,53 +134,4 @@ public class CsvWriter {
         }
     }
 
-    /**
-     * {@inheritDoc}.
-     */
-    @Override
-    public String toString() {
-        return out.toString();
-    }
-
-    /**
-     * writes output as raw character bytes.
-     * Does not attempt any character encoding.
-     * @param target the target file.
-     * @throws IOException if writing fails.
-     */
-    public void writeRaw(File target) throws IOException {
-        FileOutputStream w = new FileOutputStream(target);
-        try {
-            String str = out.toString();
-            for (int t = 0; t < str.length(); t++) {
-                w.write(str.charAt(t));
-            }
-        } finally {
-            w.close();
-        }
-    }
-
-    /**
-     * writes output encoded according to the given character set. 
-     * @param target the target file.
-     * @param charset the character set.
-     * @throws IOException if writing fails.
-     */
-    public void writeToFile(File target, String charset) throws IOException {
-        BufferedWriter wr = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(target), Charset.forName(charset)));
-        try {
-            wr.write(out.toString());
-        } finally {
-            wr.close();
-        }
-    }
-
-    /**
-     * writes to file using ISO-8859-1 encoding.
-     * @param target
-     * @throws IOException
-     */
-    public void writeToFile(File target) throws IOException {
-        writeToFile(target, "ISO-8859-1");
-    }
 }
