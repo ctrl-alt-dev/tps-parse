@@ -11,7 +11,7 @@ WARNING : This software is based on Reverse Engineered TPS Files.
           Check the output files thoroughly before proceeding.
 
 Typical use:
- java -jar tps-to-csv.jar -s [source file or folder] -t [target file or folder] -sort
+ java -jar tps-to-csv.jar -s [source file or folder] -t [target file or folder]
 
 Read the [blogpost](http://blog.42.nl/articles/liberating-data-from-clarion-tps-files).
 
