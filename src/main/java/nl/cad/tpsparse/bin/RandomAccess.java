@@ -396,10 +396,32 @@ public class RandomAccess {
         String sign = sb.substring(0, 1);
         String number = sb.substring(1);
         if (digitsAfterDecimalPoint > 0) {
-            number = number.substring(number.length() - digitsAfterDecimalPoint - totalDigits, number.length() - digitsAfterDecimalPoint) + "."
-                    + number.substring(number.length() - digitsAfterDecimalPoint);
+            int decimalIndex = number.length() - digitsAfterDecimalPoint;
+            number = trimLeadingZeros(number.substring(0, decimalIndex)) + "." + number.substring(decimalIndex);
+        } else {
+            number = trimLeadingZeros(number);
         }
         return (!sign.equals("0") ? "-" : "") + number;
+    }
+
+    /**
+     * @param number a number string.
+     * @return the number string without leading zeros.
+     */
+    private String trimLeadingZeros(String number) {
+        int idx = -1;
+        for (int t = 0; t < number.length(); t++) {
+            if (number.charAt(t) == '0') {
+                idx++;
+            } else {
+                break;
+            }
+        }
+        if (idx == number.length() - 1) {
+            return number.substring(idx);
+        } else {
+            return number.substring(idx + 1);
+        }
     }
 
 }

@@ -52,6 +52,13 @@ Example for an encrypted TPS file:
     TpsFile tpsFile = new TpsFile(new File("datafile.tps"), "password");
 ```
 
+V1.0.9 22 Aug 2013
+------------------
+- Leading zero's of BCD values are now trimmed.
+- Fixed a bug in BCD parsing. 
+  For some TPS files the 'bcdLengthOfElement' value exceeds the number of available (remaining) digits.
+  The value is now ignored and the actual length of available digits is taken.   
+
 V1.0.8 15 May 2013
 ------------------
 - Streaming Support for large files.

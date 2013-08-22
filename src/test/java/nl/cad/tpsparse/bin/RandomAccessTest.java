@@ -87,11 +87,17 @@ public class RandomAccessTest {
 
     @Test
     public void shouldParseBCD() {
-        assertEquals("000", new RandomAccess(new byte[] { 0x00, 0x00 }).binaryCodedDecimal(2, 3, 0));
+        assertEquals("0", new RandomAccess(new byte[] { 0x00, 0x00 }).binaryCodedDecimal(2, 3, 0));
+        assertEquals("979", new RandomAccess(new byte[] { 0x09, 0x79 }).binaryCodedDecimal(2, 3, 0));
         assertEquals("0.00", new RandomAccess(new byte[] { 0x00, 0x00 }).binaryCodedDecimal(2, 1, 2));
-        assertEquals("000.00", new RandomAccess(new byte[] { 0x00, 0x00, 0x00 }).binaryCodedDecimal(3, 3, 2));
+        assertEquals("10.0", new RandomAccess(new byte[] { 0x01, 0x00 }).binaryCodedDecimal(2, 2, 1));
+        assertEquals("0.0", new RandomAccess(new byte[] { 0x00, 0x00 }).binaryCodedDecimal(2, 2, 1));
+        assertEquals("0.00", new RandomAccess(new byte[] { 0x00, 0x00, 0x00 }).binaryCodedDecimal(3, 3, 2));
         assertEquals("1.23", new RandomAccess(new byte[] { 0x01, 0x23 }).binaryCodedDecimal(2, 1, 2));
         assertEquals("-1.23", new RandomAccess(new byte[] { (byte) 0xF1, 0x23 }).binaryCodedDecimal(2, 1, 2));
+        // from real world TPS, 7 bytes -> 14 digits, minus one for the sign =
+        // 13 digits, minus 8 behind the dot, remains 5 before, not 7!
+        assertEquals("0.00000000", new RandomAccess(new byte[] { (byte) 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }).binaryCodedDecimal(7, 7, 8));
     }
 
     @Test
