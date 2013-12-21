@@ -18,6 +18,8 @@ package nl.cad.tpsparse;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Map;
 
 import nl.cad.tpsparse.convert.AbstractTpsToCsv;
@@ -80,6 +82,8 @@ public class Main {
         private boolean help;
         @Parameter(names = { "-encoding" }, description = "CSV output encoding.", required = false)
         private String encoding = "ISO-8859-1";
+        @Parameter(names = { "-tpsEncoding" }, description = "TPS (input) encoding for strings.", required = false)
+        private String tpsEncoding = "ISO-8859-1";
         @Parameter(names = { "-compare" }, description = "Compare Output File to existing Csv", required = false, converter = FileConverter.class)
         private File compareToFile;
         @Parameter(names = { "-raw" }, description = "Don't attempt any character encoding, output the bytes as is.")
@@ -127,6 +131,8 @@ public class Main {
             //
         } catch (IOException ex) {
             System.out.println("Error reading TPS file: " + ex.getMessage());
+        } catch (UnsupportedCharsetException ex) {
+            System.out.println("Unknown or unsupported characterset '" + ex.getCharsetName() + "'.");
         } catch (ParameterException ex) {
             System.out.println(ex.getMessage());
             cmd.usage();
@@ -266,6 +272,7 @@ public class Main {
                 System.out.println("Opening " + args.sourceFile);
             }
             TpsFile tpsFile = new TpsFile(args.sourceFile);
+            tpsFile.setStringEncoding(Charset.forName(args.tpsEncoding));
             tpsFile.getHeader();
             return tpsFile;
         } catch (NotATopSpeedFileException ex) {

@@ -156,7 +156,11 @@ public class RandomAccess {
     }
 
     public String fixedLengthString(int len) {
-        String str = new String(data, ofs, len, Charset.forName("ISO-8859-1"));
+        return fixedLengthString(len, Charset.forName("ISO-8859-1"));
+    }
+
+    public String fixedLengthString(int len, Charset charset) {
+        String str = new String(data, ofs, len, charset);
         ofs += len;
         return str;
     }
@@ -166,6 +170,10 @@ public class RandomAccess {
      * @return the string.
      */
     public String zeroTerminatedString() {
+        return zeroTerminatedString(Charset.forName("ISO-8859-1"));
+    }
+
+    public String zeroTerminatedString(Charset charset) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         int value = 0;
         do {
@@ -174,20 +182,24 @@ public class RandomAccess {
                 out.write(value);
             }
         } while (value != 0);
-        return new String(out.toByteArray(), Charset.forName("ISO-8859-1"));
+        return new String(out.toByteArray(), charset);
     }
 
     /**
-     * pascal strings have their lenght encoded in the first byte.
+     * pascal strings have their length encoded in the first byte.
      * @return the string.
      */
     public String pascalString() {
+        return pascalString(Charset.forName("ISO-8859-1"));
+    }
+
+    public String pascalString(Charset charset) {
         int len = leByte();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         for (int t = 0; t < len; t++) {
             out.write(leByte());
         }
-        return new String(out.toByteArray(), Charset.forName("ISO-8859-1"));
+        return new String(out.toByteArray(), charset);
     }
 
     public RandomAccess jumpAbs(int ofs) {

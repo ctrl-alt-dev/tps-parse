@@ -15,6 +15,7 @@
  */
 package nl.cad.tpsparse.tps.record;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,13 +34,16 @@ public class TableDefinitionRecord {
     private List<FieldDefinitionRecord> fields = new ArrayList<FieldDefinitionRecord>();
     private List<MemoDefinitionRecord> memos = new ArrayList<MemoDefinitionRecord>();
     private List<IndexDefinitionRecord> indexes = new ArrayList<IndexDefinitionRecord>();
+    private Charset stringEncoding;
 
-    public TableDefinitionRecord(RandomAccess rx) {
+    public TableDefinitionRecord(RandomAccess rx, Charset stringEncoding) {
         this.driverVersion = rx.leShort();
         this.recordLength = rx.leShort();
         this.nrOfFields = rx.leShort();
         this.nrOfMemos = rx.leShort();
         this.nrOfIndexes = rx.leShort();
+        //
+        this.stringEncoding = stringEncoding;
         //
         try {
             for (int t = 0; t < nrOfFields; t++) {
@@ -164,11 +168,11 @@ public class TableDefinitionRecord {
             return rx.binaryCodedDecimal(len, field.getBcdLengthOfElement(), field.getBcdDigitsAfterDecimalPoint());
         case 0x12:
             // Fixed Length String
-            return rx.fixedLengthString(len);
+            return rx.fixedLengthString(len, stringEncoding);
         case 0x13:
-            return rx.zeroTerminatedString();
+            return rx.zeroTerminatedString(stringEncoding);
         case 0x14:
-            return rx.pascalString();
+            return rx.pascalString(stringEncoding);
         case 0x16:
             // Group (an overlay on top of existing data, can be anything).
             return rx.readBytes(len);

@@ -52,6 +52,10 @@ Example for an encrypted TPS file:
     TpsFile tpsFile = new TpsFile(new File("datafile.tps"), "password");
 ```
 
+V1.0.10 21 Dec 2013
+------------------
+- Added support for custom TPS string encodings such as CP850. 
+
 V1.0.9 22 Aug 2013
 ------------------
 - Leading zero's of BCD values are now trimmed.
@@ -82,7 +86,7 @@ V1.0.5 26 Feb 2013
 
 V1.0.4 21 Jan 2013
 ------------------
-- Move to GITHUB 
+- Move to Github 
 
 V1.0.3 21 Jan 2013
 ------------------

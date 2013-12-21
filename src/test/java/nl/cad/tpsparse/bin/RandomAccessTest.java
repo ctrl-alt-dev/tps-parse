@@ -18,6 +18,8 @@ package nl.cad.tpsparse.bin;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.charset.Charset;
+
 import org.junit.Test;
 
 public class RandomAccessTest {
@@ -48,6 +50,11 @@ public class RandomAccessTest {
     @Test
     public void shouldReadFixedLengthString() {
         assertEquals(" !", new RandomAccess(new byte[] { 0x20, 0x21, 0x22 }).fixedLengthString(2));
+    }
+
+    @Test
+    public void shouldReadFixedLengthStringWithCP850() {
+        assertEquals("é!", new RandomAccess(new byte[] { (byte) 0x82, 0x21, 0x22 }).fixedLengthString(2, Charset.forName("CP850")));
     }
 
     @Test

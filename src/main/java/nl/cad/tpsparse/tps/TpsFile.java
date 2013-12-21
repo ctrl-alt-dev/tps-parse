@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -94,6 +95,7 @@ public class TpsFile {
     }
 
     private RandomAccess read;
+    private Charset stringEncoding = Charset.forName("ISO-8859-1");
 
     /**
      * constructs a new TpsFile from the given file.
@@ -169,6 +171,15 @@ public class TpsFile {
      */
     public TpsFile(RandomAccess read) {
         this.read = read;
+    }
+
+    /**
+     * changes the string encoding of the strings in the TPS file. Default is
+     * ISO-8859-1 but others are sometimes used like CP850.
+     * @param stringEncoding the string encoding used inside the TPS file.
+     */
+    public void setStringEncoding(Charset stringEncoding) {
+        this.stringEncoding = stringEncoding;
     }
 
     /**
@@ -441,7 +452,7 @@ public class TpsFile {
         Map<Integer, TableDefinitionRecord> tables = new TreeMap<Integer, TableDefinitionRecord>();
         for (Map.Entry<Integer, List<TpsRecord>> table : tableDefs.entrySet()) {
             if (isComplete(table.getValue())) {
-                tables.put(table.getKey(), new TableDefinitionRecord(merge(table.getValue())));
+                tables.put(table.getKey(), new TableDefinitionRecord(merge(table.getValue()), stringEncoding));
             }
         }
         return tables;

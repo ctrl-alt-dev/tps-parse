@@ -3,7 +3,7 @@
 
     <groupId>nl.cad</groupId>
     <artifactId>tps-parse</artifactId>
-    <version>1.0.9</version>
+    <version>1.0.10</version>
     <packaging>jar</packaging>
     <name>TopSpeed Parser</name>
     <description>Parses Clarion Top Speed (TPS) files. Implemented by Reverse Engineering existing TPS files.</description>
