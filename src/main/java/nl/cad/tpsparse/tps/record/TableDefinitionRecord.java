@@ -98,8 +98,9 @@ public class TableDefinitionRecord {
             int len = field.getLength();
             if (field.isArray()) {
                 Object[] arr = new Object[field.getNrOfElements()];
+                int fieldSize = len / arr.length;
                 for (int y = 0; y < arr.length; y++) {
-                    arr[y] = parseField(type, ofs, len / arr.length, field, rx);
+                    arr[y] = parseField(type, ofs + fieldSize * y, fieldSize, field, rx);
                 }
                 values.add(arr);
             } else {

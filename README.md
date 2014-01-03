@@ -52,6 +52,10 @@ Example for an encrypted TPS file:
     TpsFile tpsFile = new TpsFile(new File("datafile.tps"), "password");
 ```
 
+V1.0.11 03 Jan 2014
+------------------
+- Fixed a bug in array handling. Correct offset is now used.    
+
 V1.0.10 21 Dec 2013
 ------------------
 - Added support for custom TPS string encodings such as CP850. 
