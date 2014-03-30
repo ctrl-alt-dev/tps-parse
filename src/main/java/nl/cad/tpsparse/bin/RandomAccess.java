@@ -32,8 +32,19 @@ public class RandomAccess {
     private int ofs = 0;
     private byte[] data;
     private List<Integer> positionStack = new ArrayList<Integer>();
+    private int baseOfs;
+    private int length;
 
     public RandomAccess(byte[] data) {
+        this.ofs = 0;
+        this.data = data;
+        this.baseOfs = 0;
+        this.length = data.length;
+    }
+
+    public RandomAccess(byte[] data, int baseOfs, int length) {
+        this.baseOfs = baseOfs;
+        this.length = length;
         this.ofs = 0;
         this.data = data;
     }
@@ -41,6 +52,8 @@ public class RandomAccess {
     public RandomAccess(String hex) {
         String[] bytes = hex.split(" ");
         data = new byte[bytes.length];
+        this.baseOfs = 0;
+        this.length = data.length;
         for (int t = 0; t < data.length; t++) {
             data[t] = (byte) Integer.parseInt(bytes[t], 16);
         }
@@ -65,7 +78,9 @@ public class RandomAccess {
      * @return an integer.
      */
     public int leLong() {
-        int out = (data[ofs] & 0xFF) | ((data[ofs + 1] & 0xFF) << 8) | ((data[ofs + 2] & 0xFF) << 16) | ((data[ofs + 3] & 0xFF) << 24);
+        checkSpace(4);
+        int ref = baseOfs + ofs;
+        int out = (data[ref] & 0xFF) | ((data[ref + 1] & 0xFF) << 8) | ((data[ref + 2] & 0xFF) << 16) | ((data[ref + 3] & 0xFF) << 24);
         //
         // For some records it seems that 1s complement is used to encode
         // negative numbers ?!
@@ -74,16 +89,27 @@ public class RandomAccess {
         return out;
     }
 
+    private void checkSpace(int bytes) {
+        if (ofs + bytes > length) {
+            throw new ArrayIndexOutOfBoundsException(ofs + bytes);
+        }
+        if (ofs < 0) {
+            throw new ArrayIndexOutOfBoundsException(ofs);
+        }
+    }
+
     /**
      * writes a 4 byte little endian value to the current position. Used when
      * decrypting.
      * @param value the value.
      */
     public void setLeLong(int value) {
-        data[ofs] = (byte) ((value >> 0) & 0xFF);
-        data[ofs + 1] = (byte) ((value >> 8) & 0xFF);
-        data[ofs + 2] = (byte) ((value >> 16) & 0xFF);
-        data[ofs + 3] = (byte) ((value >> 24) & 0xFF);
+        checkSpace(4);
+        int ref = baseOfs + ofs;
+        data[ref] = (byte) ((value >> 0) & 0xFF);
+        data[ref + 1] = (byte) ((value >> 8) & 0xFF);
+        data[ref + 2] = (byte) ((value >> 16) & 0xFF);
+        data[ref + 3] = (byte) ((value >> 24) & 0xFF);
         ofs += 4;
     }
 
@@ -92,7 +118,9 @@ public class RandomAccess {
      * @return an unsigned 4 byte value.
      */
     public long leULong() {
-        long out = (data[ofs] & 0xFFL) | ((data[ofs + 1] & 0xFFL) << 8L) | ((data[ofs + 2] & 0xFFL) << 16L) | ((data[ofs + 3] & 0xFFL) << 24L);
+        checkSpace(4);
+        int ref = baseOfs + ofs;
+        long out = (data[ref] & 0xFFL) | ((data[ref + 1] & 0xFFL) << 8L) | ((data[ref + 2] & 0xFFL) << 16L) | ((data[ref + 3] & 0xFFL) << 24L);
         ofs += 4;
         return out;
     }
@@ -101,7 +129,9 @@ public class RandomAccess {
      * @return big endian signed long.
      */
     public int beLong() {
-        int out = (data[ofs + 3] & 0xFF) | ((data[ofs + 2] & 0xFF) << 8) | ((data[ofs + 1] & 0xFF) << 16) | ((data[ofs] & 0xFF) << 24);
+        checkSpace(4);
+        int ref = baseOfs + ofs;
+        int out = (data[ref + 3] & 0xFF) | ((data[ref + 2] & 0xFF) << 8) | ((data[ref + 1] & 0xFF) << 16) | ((data[ref] & 0xFF) << 24);
         ofs += 4;
         return out;
     }
@@ -110,39 +140,55 @@ public class RandomAccess {
      * @return big endian unsigned long.
      */
     public long beULong() {
-        long out = (data[ofs + 3] & 0xFFL) | ((data[ofs + 2] & 0xFFL) << 8L) | ((data[ofs + 1] & 0xFFL) << 16L) | ((data[ofs + 0] & 0xFFL) << 24L);
+        checkSpace(4);
+        int ref = baseOfs + ofs;
+        long out = (data[ref + 3] & 0xFFL) | ((data[ref + 2] & 0xFFL) << 8L) | ((data[ref + 1] & 0xFFL) << 16L) | ((data[ref + 0] & 0xFFL) << 24L);
         ofs += 4;
         return out;
     }
 
     public int leShort() {
-        int out = (data[ofs] & 0xFF) | ((data[ofs + 1] & 0xFF) << 8);
+        checkSpace(2);
+        int ref = baseOfs + ofs;
+        int out = (data[ref] & 0xFF) | ((data[ref + 1] & 0xFF) << 8);
         ofs += 2;
         return out;
     }
 
     public Object leUShort() {
-        int out = (data[ofs] & 0xFF) | ((data[ofs + 1] & 0xFF) << 8);
+        checkSpace(2);
+        int ref = baseOfs + ofs;
+        int out = (data[ref] & 0xFF) | ((data[ref + 1] & 0xFF) << 8);
         ofs += 2;
         return out;
     }
 
     public int beShort() {
-        int out = (data[ofs + 1] & 0xFF) | ((data[ofs] & 0xFF) << 8);
+        checkSpace(2);
+        int ref = baseOfs + ofs;
+        int out = (data[ref + 1] & 0xFF) | ((data[ref] & 0xFF) << 8);
         ofs += 2;
         return out;
     }
 
     public int leByte() {
-        int out = (data[ofs] & 0xFF);
+        checkSpace(1);
+        int ref = baseOfs + ofs;
+        int out = (data[ref] & 0xFF);
         ofs += 1;
         return out;
     }
 
     public int beByte() {
-        int out = (data[ofs] & 0xFF);
+        checkSpace(1);
+        int ref = baseOfs + ofs;
+        int out = (data[ref] & 0xFF);
         ofs += 1;
         return out;
+    }
+
+    public byte peek(int pos) {
+        return data[baseOfs + pos];
     }
 
     public float leFloat() {
@@ -156,11 +202,13 @@ public class RandomAccess {
     }
 
     public String fixedLengthString(int len) {
+        checkSpace(len);
         return fixedLengthString(len, Charset.forName("ISO-8859-1"));
     }
 
     public String fixedLengthString(int len, Charset charset) {
-        String str = new String(data, ofs, len, charset);
+        int ref = baseOfs + ofs;
+        String str = new String(data, ref, len, charset);
         ofs += len;
         return str;
     }
@@ -216,23 +264,31 @@ public class RandomAccess {
     }
 
     public int length() {
-        return data.length;
+        return this.length;
     }
 
     public byte[] data() {
-        return data;
+        if (baseOfs == 0 && data.length == length) {
+            return data;
+        } else {
+            byte[] tmp = new byte[length];
+            System.arraycopy(data, baseOfs, tmp, 0, length);
+            return tmp;
+        }
     }
 
     public RandomAccess read(int len) {
-        byte[] tmp = new byte[len];
-        System.arraycopy(data, ofs, tmp, 0, len);
+        checkSpace(len);
+        int ref = baseOfs + ofs;
         ofs += len;
-        return new RandomAccess(tmp);
+        return new RandomAccess(data, ref, len);
     }
 
     public byte[] readBytes(int len) {
+        checkSpace(len);
         byte[] tmp = new byte[len];
-        System.arraycopy(data, ofs, tmp, 0, len);
+        int ref = baseOfs + ofs;
+        System.arraycopy(data, ref, tmp, 0, len);
         ofs += len;
         return tmp;
     }
@@ -327,8 +383,9 @@ public class RandomAccess {
     }
 
     public byte[] remainder() {
-        byte[] result = new byte[data.length - ofs];
-        System.arraycopy(data, ofs, result, 0, result.length);
+        int ref = baseOfs + ofs;
+        byte[] result = new byte[length - ofs];
+        System.arraycopy(data, ref, result, 0, result.length);
         return result;
     }
 
@@ -350,19 +407,19 @@ public class RandomAccess {
 
     public String toHex(int step, boolean asc) {
         StringBuilder sb = new StringBuilder();
-        for (int t = 0; t < data.length; t += step) {
+        for (int t = 0; t < length; t += step) {
             sb.append(toHex4(t) + " : ");
             for (int y = 0; y < step; y++) {
-                if (t + y < data.length) {
-                    sb.append(toHex2(data[t + y] & 0x00FF));
+                if (t + y < length) {
+                    sb.append(toHex2(data[baseOfs + t + y] & 0x00FF));
                     sb.append(" ");
                 }
             }
             if (asc) {
                 sb.append(" ");
                 for (int y = 0; y < step; y++) {
-                    if (t + y < data.length) {
-                        int ch = data[t + y] & 0x00FF;
+                    if (t + y < length) {
+                        int ch = data[baseOfs + t + y] & 0x00FF;
                         if (ch < 32 || ch > 127) {
                             sb.append(".");
                         } else {
@@ -379,8 +436,8 @@ public class RandomAccess {
     public String toAscii() {
         StringBuilder sb = new StringBuilder();
         boolean wasHex = false;
-        for (int t = 0; t < data.length; t++) {
-            int v = data[t] & 0x00FF;
+        for (int t = 0; t < length; t++) {
+            int v = data[baseOfs + t] & 0x00FF;
             if ((v < 32) || (v > 127)) {
                 sb.append(" ");
                 sb.append(toHex2(v));

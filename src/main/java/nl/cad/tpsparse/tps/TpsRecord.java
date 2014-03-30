@@ -105,28 +105,28 @@ public class TpsRecord {
      * table name, which has it at position 0.
      */
     private void buildHeader() {
-        byte[] hdr = data.readBytes(headerLength);
-        if (hdr.length >= 5) {
+        RandomAccess hdr = data.read(headerLength);
+        if (hdr.length() >= 5) {
             //
-            if ((hdr[0] & 0xFF) == 0xFE) {
-                header = new TableNameHeader(new RandomAccess(hdr));
+            if ((hdr.peek(0) & 0xFF) == 0xFE) {
+                header = new TableNameHeader(hdr);
             } else {
                 //
-                switch ((int) (hdr[4] & 0xFF)) {
+                switch ((int) (hdr.peek(4) & 0xFF)) {
                 case 0xF3:
-                    header = new DataHeader(new RandomAccess(hdr));
+                    header = new DataHeader(hdr);
                     break;
                 case 0xF6:
-                    header = new MetadataHeader(new RandomAccess(hdr));
+                    header = new MetadataHeader(hdr);
                     break;
                 case 0xFA:
-                    header = new TableDefinitionHeader(new RandomAccess(hdr));
+                    header = new TableDefinitionHeader(hdr);
                     break;
                 case 0xFC:
-                    header = new MemoHeader(new RandomAccess(hdr));
+                    header = new MemoHeader(hdr);
                     break;
                 default:
-                    header = new IndexHeader(new RandomAccess(hdr));
+                    header = new IndexHeader(hdr);
                     break;
                 }
             }

@@ -117,4 +117,44 @@ public class RandomAccessTest {
         int value2 = rx.leLong();
         assertEquals(value, value2);
     }
+
+    @Test
+    public void shouldReuseBuffer() {
+        RandomAccess rx = new RandomAccess(new byte[] { 1, 2, 3, 4 });
+        rx.beByte();
+        RandomAccess read = rx.read(3);
+        assertEquals(3, read.length());
+        assertEquals(0, read.position());
+        assertEquals(2, read.leByte());
+        assertEquals(3, read.leByte());
+        assertEquals(4, read.leByte());
+        read.jumpAbs(0);
+        assertEquals(2, read.leByte());
+        read.jumpRel(1);
+        assertEquals(4, read.leByte());
+        read.jumpAbs(1);
+        RandomAccess read2 = read.read(2);
+        assertEquals(2, read2.length());
+        assertEquals(0, read2.position());
+        assertEquals(3, read2.leByte());
+        assertEquals(4, read2.leByte());
+    }
+
+    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    public void shouldFailBeyondBuffer() {
+        RandomAccess rx = new RandomAccess(new byte[] { 1, 2, 3, 4 });
+        rx.beByte();
+        RandomAccess read = rx.read(3);
+        read.leLong();
+    }
+
+    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    public void shouldFailBeforeBuffer() {
+        RandomAccess rx = new RandomAccess(new byte[] { 1, 2, 3, 4 });
+        rx.beByte();
+        RandomAccess read = rx.read(3);
+        read.jumpAbs(-1);
+        read.beByte();
+    }
+
 }
