@@ -20,7 +20,9 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import nl.cad.tpsparse.convert.AbstractTpsToCsv;
 import nl.cad.tpsparse.convert.BufferingTpsToCsv;
@@ -262,8 +264,17 @@ public class Main {
     private static File buildTargetFile(Args args, Map.Entry<Integer, TableDefinitionRecord> table) {
         File parentFile = args.targetFile.getParentFile();
         String name = args.targetFile.getName();
-        File target = new File(parentFile, name.substring(0, name.lastIndexOf('.')) + "." + table.getKey() + ".csv");
+        File target = new File(parentFile, name.substring(0, name.lastIndexOf('.')) + "." + getTableName(table) + ".csv");
         return target;
+    }
+
+    private static String getTableName(Entry<Integer, TableDefinitionRecord> table) {
+        List<FieldDefinitionRecord> fields = table.getValue().getFields();
+        if (fields.size() > 0) {
+            return fields.get(0).getTableName();
+        } else {
+            return String.valueOf(table.getKey());
+        }
     }
 
     private static TpsFile openFile(Args args) throws IOException {

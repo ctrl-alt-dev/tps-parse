@@ -91,6 +91,15 @@ public class FieldDefinitionRecord {
         return fieldName;
     }
 
+    public String getTableName() {
+        int idx = fieldName.indexOf(':');
+        if (idx > 0) {
+            return fieldName.substring(0, idx);
+        } else {
+            return "";
+        }
+    }
+
     public int getBcdDigitsAfterDecimalPoint() {
         return bcdDigitsAfterDecimalPoint;
     }
