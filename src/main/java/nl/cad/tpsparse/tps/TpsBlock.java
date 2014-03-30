@@ -87,6 +87,12 @@ public class TpsBlock {
         }
     }
 
+    public void flush() {
+        for (TpsPage page : getPages()) {
+            page.flush();
+        }
+    }
+
     public List<TpsPage> getPages() {
         return pages;
     }

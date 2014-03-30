@@ -27,6 +27,7 @@ import nl.cad.tpsparse.tps.header.DataHeader;
 import nl.cad.tpsparse.tps.record.DataRecord;
 import nl.cad.tpsparse.tps.record.MemoRecord;
 import nl.cad.tpsparse.tps.record.TableDefinitionRecord;
+import nl.cad.tpsparse.util.Utils;
 
 /**
  * Streaming Tps to Csv converter that doesn't consume as much memory. It
@@ -50,7 +51,8 @@ public class StreamingTpsToCsv extends AbstractTpsToCsv {
 
     protected void processRecords(final List<List<MemoRecord>> memos) {
         if (isVerbose()) {
-            System.out.println("Processing records.");
+            System.out.println("Processing records");
+            System.out.println("Memory: " + Utils.reportMemoryUsage());
         }
         getTpsFile().visit(new Visitor() {
             @Override

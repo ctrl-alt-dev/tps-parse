@@ -239,6 +239,7 @@ public class TpsFile {
                 for (TpsRecord record : page.getRecords()) {
                     v.onTpsRecord(record);
                 }
+                page.flush();
             }
         }
     }
@@ -256,6 +257,7 @@ public class TpsFile {
                 for (TpsRecord record : page.getRecords()) {
                     dv.onTpsRecord(data, page, record);
                 }
+                page.flush();
             }
         }
     }

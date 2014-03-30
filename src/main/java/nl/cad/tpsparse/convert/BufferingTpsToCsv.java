@@ -25,6 +25,7 @@ import nl.cad.tpsparse.tps.TpsFile;
 import nl.cad.tpsparse.tps.record.DataRecord;
 import nl.cad.tpsparse.tps.record.MemoRecord;
 import nl.cad.tpsparse.tps.record.TableDefinitionRecord;
+import nl.cad.tpsparse.util.Utils;
 
 /**
  * Performs TPS to CSV conversion by buffering everything into memory. These
@@ -50,6 +51,7 @@ public class BufferingTpsToCsv extends AbstractTpsToCsv {
     protected void processRecords(List<List<MemoRecord>> memos, Map<Integer, DataRecord> recordsById) {
         if (isVerbose()) {
             System.out.println("Converting " + recordsById.size() + " records to CSV");
+            System.out.println("Memory: " + Utils.reportMemoryUsage());
         }
         for (Map.Entry<Integer, DataRecord> entry : recordsById.entrySet()) {
             DataRecord rec = entry.getValue();
@@ -60,6 +62,7 @@ public class BufferingTpsToCsv extends AbstractTpsToCsv {
     protected Map<Integer, DataRecord> buildRecordsById() {
         if (isVerbose()) {
             System.out.println("Sorting records and checking for duplicates.");
+            System.out.println("Memory: " + Utils.reportMemoryUsage());
         }
         Map<Integer, DataRecord> recordsById = new TreeMap<Integer, DataRecord>();
         //

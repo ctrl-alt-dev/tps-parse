@@ -46,6 +46,7 @@ public class TpsPage {
     private int recordCount;
     private int flags;
 
+    private RandomAccess compressedData;
     private RandomAccess data;
     private List<TpsRecord> records = new ArrayList<TpsRecord>();
 
@@ -58,16 +59,38 @@ public class TpsPage {
         recordCount = header.leShort();
         flags = header.leByte();
         //
-        RandomAccess read = header.read(pageSize - 13);
+        compressedData = header.read(pageSize - 13);
+    }
+
+    protected void uncompress() {
         if ((pageSize != pageSizeUncompressed) && (flags == 0)) {
             try {
-                data = header.deRle(read);
+                compressedData.pushPosition();
+                data = compressedData.deRle(compressedData);
             } catch (Exception ex) {
-                throw new RunLengthEncodingException("Bad RLE DataBlock at index " + read + " of " + rx + " in " + this, ex);
+                throw new RunLengthEncodingException("Bad RLE DataBlock at index " + compressedData + " in " + this, ex);
+            } finally {
+                compressedData.popPosition();
             }
         } else {
-            data = read;
+            data = compressedData;
         }
+    }
+
+    protected RandomAccess getData() {
+        if (isFlushed()) {
+            uncompress();
+        }
+        return data;
+    }
+
+    public void flush() {
+        data = null;
+        records.clear();
+    }
+
+    protected boolean isFlushed() {
+        return data == null;
     }
 
     @Override
@@ -104,13 +127,16 @@ public class TpsPage {
     }
 
     public RandomAccess getUncompressedData() {
-        return data;
+        return getData();
     }
 
     /**
      * (re)parses all TpsRecords in the page.
      */
     public void parseRecords() {
+        if (isFlushed()) {
+            uncompress();
+        }
         records.clear();
         // Skip pages with non 0x00 flags as they don't seem to contain TpsRecords.
         if (flags == 0x00) {
@@ -134,6 +160,9 @@ public class TpsPage {
     }
 
     public List<TpsRecord> getRecords() {
+        if (isFlushed()) {
+            parseRecords();
+        }
         return records;
     }
 }

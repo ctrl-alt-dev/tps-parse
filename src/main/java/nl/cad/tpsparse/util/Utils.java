@@ -57,4 +57,9 @@ public final class Utils {
         key.init();
         return key.decrypt(bytes, 0, bytes.length);
     }
+
+    public static String reportMemoryUsage() {
+        Runtime r = Runtime.getRuntime();
+        return String.valueOf((r.totalMemory() - r.freeMemory()) / (1024 * 1024)) + " MB";
+    }
 }

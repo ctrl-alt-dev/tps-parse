@@ -29,6 +29,7 @@ import nl.cad.tpsparse.tps.record.FieldDefinitionRecord;
 import nl.cad.tpsparse.tps.record.MemoDefinitionRecord;
 import nl.cad.tpsparse.tps.record.MemoRecord;
 import nl.cad.tpsparse.tps.record.TableDefinitionRecord;
+import nl.cad.tpsparse.util.Utils;
 
 /**
  * @author E.Hooijmeijer
@@ -163,6 +164,9 @@ public abstract class AbstractTpsToCsv {
         for (int t = 0; t < table.getMemos().size(); t++) {
             memos.add(tpsFile.getMemoRecords(tableId, t, ignoreErrors));
         }
+        if (verbose) {
+            System.out.println("Memory: " + Utils.reportMemoryUsage());
+        }
         return memos;
     }
 
@@ -214,7 +218,7 @@ public abstract class AbstractTpsToCsv {
         //
         recordCount++;
         if (isVerbose() && (recordCount % 1000 == 0)) {
-            System.out.println("Processed record #" + recordCount);
+            System.out.println("Processed record #" + recordCount + " (" + Utils.reportMemoryUsage() + ")");
         }
     }
 

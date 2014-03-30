@@ -43,6 +43,7 @@ import nl.cad.tpsparse.tps.record.FieldDefinitionRecord;
 import nl.cad.tpsparse.tps.record.IndexDefinitionRecord;
 import nl.cad.tpsparse.tps.record.MemoDefinitionRecord;
 import nl.cad.tpsparse.tps.record.TableDefinitionRecord;
+import nl.cad.tpsparse.util.Utils;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -164,6 +165,9 @@ public class Main {
         //
         try {
             Map<Integer, TableDefinitionRecord> tableDefinitions = tpsFile.getTableDefinitions(args.ignoreErrors);
+            if (args.verbose) {
+                System.out.println("Memory: " + Utils.reportMemoryUsage());
+            }
             //
             if (args.info) {
                 info(args.sourceFile, tableDefinitions);
