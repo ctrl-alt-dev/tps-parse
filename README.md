@@ -52,6 +52,13 @@ Example for an encrypted TPS file:
     TpsFile tpsFile = new TpsFile(new File("datafile.tps"), "password");
 ```
 
+V1.0.12 30 Mar 2014
+------------------
+- TpsPage flushing, less memory is used at the expense of CPU.
+- Added memory reporting when running with -verbose.
+- Byte buffers are now shared instead of copied where possible.
+- For TPS files with multiple tables, the name is now exposed in the CSV file name.    
+
 V1.0.11 03 Jan 2014
 ------------------
 - Fixed a bug in array handling. Correct offset is now used.    
