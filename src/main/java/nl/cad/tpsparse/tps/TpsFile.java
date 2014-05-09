@@ -17,7 +17,6 @@ package nl.cad.tpsparse.tps;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -103,7 +102,7 @@ public class TpsFile {
      * @throws IOException when reading the file fails.
      */
     public TpsFile(File file) throws IOException {
-        this(new FileInputStream(file));
+        this(Utils.readFully(file));
     }
 
     /**
@@ -113,7 +112,7 @@ public class TpsFile {
      * @throws IOException when reading the file fails.
      */
     public TpsFile(File file, String owner) throws IOException {
-        this(new FileInputStream(file), owner);
+        this(Utils.readFully(file), owner);
     }
 
     /**

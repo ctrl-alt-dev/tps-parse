@@ -52,6 +52,10 @@ Example for an encrypted TPS file:
     TpsFile tpsFile = new TpsFile(new File("datafile.tps"), "password");
 ```
 
+V1.0.13 9 May 2014
+------------------
+- Improved loading of the TPS file by allocating all memory in advance. 
+
 V1.0.12 30 Mar 2014
 ------------------
 - TpsPage flushing, less memory is used at the expense of CPU.

@@ -16,6 +16,8 @@
 package nl.cad.tpsparse.util;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -42,6 +44,24 @@ public final class Utils {
         int rd = 0;
         while ((rd = in.read(buffer)) >= 0) {
             out.write(buffer, 0, rd);
+        }
+        return out.toByteArray();
+    }
+
+    public static final byte[] readFully(File file) throws IOException {
+        if (file.length() > ((long) Integer.MAX_VALUE)) {
+            throw new IOException("File size exceeds maximum Java Array Size.");
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream((int) file.length());
+        FileInputStream in = new FileInputStream(file);
+        try {
+            byte[] buffer = new byte[128 * 1024];
+            int rd = 0;
+            while ((rd = in.read(buffer)) >= 0) {
+                out.write(buffer, 0, rd);
+            }
+        } finally {
+            in.close();
         }
         return out.toByteArray();
     }
