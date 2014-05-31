@@ -205,7 +205,16 @@ public abstract class AbstractTpsToCsv {
                     } else {
                         String fileName = getBaseFileName() + "-" + recordNumber + "-" + t + ".bin";
                         csv.addCell(fileName);
-                        writeFile(fileName, memo.getDataAsBlob());
+                        try {
+                            writeFile(fileName, memo.getDataAsBlob());
+                        } catch (ArrayIndexOutOfBoundsException ex) {
+                            if (ignoreErrors) {
+                                System.out.println("ERROR : for " + fileName + " : BLOB Length mismatch - saving available bytes (" + ex.getMessage() + ")");
+                                writeFile(fileName, memo.getDataAsRaw());
+                            } else {
+                                throw ex;
+                            }
+                        }
                     }
                     found = true;
                 }

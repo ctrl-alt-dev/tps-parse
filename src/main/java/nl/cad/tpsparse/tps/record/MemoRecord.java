@@ -49,6 +49,10 @@ public class MemoRecord {
         return data.readBytes(length);
     }
 
+    public byte[] getDataAsRaw() {
+        return data.remainder();
+    }
+
     public RandomAccess getData() {
         return data;
     }

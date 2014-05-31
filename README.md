@@ -52,6 +52,11 @@ Example for an encrypted TPS file:
     TpsFile tpsFile = new TpsFile(new File("datafile.tps"), "password");
 ```
 
+V1.0.14 31 May 2014
+------------------
+- version number reporting.
+- ignoreErrors writes available bytes of blobs with invalid length.  
+
 V1.0.13 9 May 2014
 ------------------
 - Improved loading of the TPS file by allocating all memory in advance. 

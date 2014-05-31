@@ -105,8 +105,10 @@ public class Main {
         try {
             cmd.parse(args);
             if (params.help || params.sourceFile == null) {
+                String version = Package.getPackage("nl.cad.tpsparse").getImplementationVersion();
                 System.out.println("TPS-to-CSV : converts Clarion TPS files to CSV.");
-                System.out.println("(C) 2012-2013 E.Hooijmeijer, Apache 2 licensed (https://www.apache.org/licenses/LICENSE-2.0.html)\n");
+                System.out.println("Version " + version + "");
+                System.out.println("(C) 2012-2014 E.Hooijmeijer, Apache 2 licensed (https://www.apache.org/licenses/LICENSE-2.0.html)\n");
                 System.out.println("WARNING : This software is based on Reverse Engineered TPS Files.");
                 System.out.println("          As such, its probably incomplete and may mis-interpret data.");
                 System.out.println("          It is no replacement for any existing Clarion tooling.");
