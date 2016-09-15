@@ -24,6 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang.StringUtils;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
+import com.beust.jcommander.converters.FileConverter;
+
 import nl.cad.tpsparse.convert.AbstractTpsToCsv;
 import nl.cad.tpsparse.convert.BufferingTpsToCsv;
 import nl.cad.tpsparse.convert.StreamingTpsToCsv;
@@ -44,13 +51,6 @@ import nl.cad.tpsparse.tps.record.IndexDefinitionRecord;
 import nl.cad.tpsparse.tps.record.MemoDefinitionRecord;
 import nl.cad.tpsparse.tps.record.TableDefinitionRecord;
 import nl.cad.tpsparse.util.Utils;
-
-import org.apache.commons.lang.StringUtils;
-
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
-import com.beust.jcommander.converters.FileConverter;
 
 /**
  * Converts TPS files into CSV files. Also displays various information on a TPS
@@ -108,7 +108,7 @@ public class Main {
                 String version = Package.getPackage("nl.cad.tpsparse").getImplementationVersion();
                 System.out.println("TPS-to-CSV : converts Clarion TPS files to CSV.");
                 System.out.println("Version " + version + "");
-                System.out.println("(C) 2012-2014 E.Hooijmeijer, Apache 2 licensed (https://www.apache.org/licenses/LICENSE-2.0.html)\n");
+                System.out.println("(C) 2012-2016 E.Hooijmeijer, Apache 2 licensed (https://www.apache.org/licenses/LICENSE-2.0.html)\n");
                 System.out.println("WARNING : This software is based on Reverse Engineered TPS Files.");
                 System.out.println("          As such, its probably incomplete and may mis-interpret data.");
                 System.out.println("          It is no replacement for any existing Clarion tooling.");

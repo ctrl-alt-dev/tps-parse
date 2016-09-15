@@ -22,12 +22,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Test;
+
 import nl.cad.tpsparse.bin.RandomAccess;
 import nl.cad.tpsparse.tps.TpsFile;
 import nl.cad.tpsparse.tps.record.DataRecord;
 import nl.cad.tpsparse.tps.record.TableDefinitionRecord;
-
-import org.junit.Test;
 
 /**
  * Tests the key generation, shuffling and decrypting of a data block.
@@ -101,8 +101,8 @@ public class KeyTest {
      */
     @Test
     public void shouldDecryptFile() throws IOException {
-        TpsFile enc = new TpsFile(KeyTest.class.getResourceAsStream("/encrypted-a.tps"), "a");
-        TpsFile not = new TpsFile(KeyTest.class.getResourceAsStream("/not-encrypted.tps"));
+        TpsFile enc = new TpsFile(KeyTest.class.getResourceAsStream("/enc/encrypted-a.tps"), "a");
+        TpsFile not = new TpsFile(KeyTest.class.getResourceAsStream("/enc/not-encrypted.tps"));
         Map<Integer, TableDefinitionRecord> encDef = enc.getTableDefinitions(false);
         Map<Integer, TableDefinitionRecord> notDef = not.getTableDefinitions(false);
         //
@@ -123,15 +123,15 @@ public class KeyTest {
     }
 
     private static final String ENCRYPTED_HEADER = //
-    "BC DC 5C 92 90 BC DF B8 B0 5B AF BB A5 F8 30 C5 " + //
-            "05 AE FF D0 F0 BF F7 C2 E0 DC FC 57 F7 BF FB 93 " + //
-            "A8 54 DA C0 70 6D AD AA 30 E9 BD FA D0 7A FD D4 " + //
-            "DD FF FE E1 50 F9 FE C1 E0 D3 77 E3 F5 7A BF F1";
+            "BC DC 5C 92 90 BC DF B8 B0 5B AF BB A5 F8 30 C5 " + //
+                    "05 AE FF D0 F0 BF F7 C2 E0 DC FC 57 F7 BF FB 93 " + //
+                    "A8 54 DA C0 70 6D AD AA 30 E9 BD FA D0 7A FD D4 " + //
+                    "DD FF FE E1 50 F9 FE C1 E0 D3 77 E3 F5 7A BF F1";
 
     private static final String DECRYPTED_HEADER = //
-    "00 00 00 00 00 02 00 c2 05 00 00 c2 05 00 74 4f " + //
-            "70 53 00 00 00 00 1a 25 07 00 00 00 05 00 00 00 " + //
-            "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 " + //
-            "00 00 00 00 00 00 00 00 05 00 00 00 0c 00 00 00";
+            "00 00 00 00 00 02 00 c2 05 00 00 c2 05 00 74 4f " + //
+                    "70 53 00 00 00 00 1a 25 07 00 00 00 05 00 00 00 " + //
+                    "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 " + //
+                    "00 00 00 00 00 00 00 00 05 00 00 00 0c 00 00 00";
 
 }
