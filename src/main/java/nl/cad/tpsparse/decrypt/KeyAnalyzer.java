@@ -162,6 +162,17 @@ public class KeyAnalyzer {
 			return sb.toString();
 		}
 
+		public boolean isSinglePassRecoverable() {
+			for (int t=15;t>=0;t--) {
+				for (Dependency d:depends.get(t)) {
+					if ((d.linked < d.column) && (d.isHorizontal())) {
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
 	}
 	
 	/**
@@ -190,6 +201,20 @@ public class KeyAnalyzer {
 	public List<NavigableSet<Dependency>> getDependencies(Key key) {
 		return new DependencyMatrix(key.toIntArray()).depends;
 	}
+
+	/**
+	 * Some keys columns only swap with key columns that have a lesser index
+	 * than themselves. If this is true for all columns in a key the key
+	 * can be recovered in a single pass, one column at a time. This is
+	 * true for about 0.1 % of the keys. Keys generated with short passwords
+	 * or passwords with odd lengths have better odds. 
+	 * @param key the key.
+	 * @return true if there are no interdependencies between key columns.
+	 */
+	public boolean isSinglePassRecoverable(Key key) {
+		return new DependencyMatrix(key.toIntArray()).isSinglePassRecoverable();
+	}
+
 	
 	/**
 	 * renders the key swap matrix to a string.

@@ -17,12 +17,12 @@ package nl.cad.tpsparse.decrypt;
 
 import static org.junit.Assert.*;
 
+import java.security.SecureRandom;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.junit.Test;
-
-import nl.cad.tpsparse.decrypt.Key;
-import nl.cad.tpsparse.decrypt.KeyAnalyzer;
 
 public class KeyAnalyzerTest {
 
@@ -64,5 +64,23 @@ public class KeyAnalyzerTest {
 		assertEquals(
 				"[[[V-f], [V-e], [V-d], [V-b], [V-a], [V-9], [V-8], [V-7], [V-6], [V-5], [V-4], [V-3], [V-2], [V-1]], [[H-0]], [[H-0]], [[H-0]], [[H-0]], [[H-0]], [[H-0]], [[H-0]], [[V-c], [H-0]], [[H-0]], [[H-0]], [[H-0]], [[H-8]], [[H-0]], [[H-0]], [[H-0]]]",
 				ka.getDependencies(k).toString());
+	}
+
+	@Test
+	public void shouldBeSinglePassResolvable() {
+		assertTrue(new KeyAnalyzer().isSinglePassRecoverable(new Key("a").init()));
+		assertFalse(new KeyAnalyzer().isSinglePassRecoverable(new Key("aa").init()));
+		assertTrue(new KeyAnalyzer().isSinglePassRecoverable(new Key("VPc").init()));
+	}
+
+	private SecureRandom rnd = new SecureRandom();
+
+	private String random(int i) {
+		StringBuilder sb = new StringBuilder();
+		for (int t = 0; t < i; t++) {
+			sb.append(
+					"abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()".charAt(rnd.nextInt(72)));
+		}
+		return sb.toString();
 	}
 }
