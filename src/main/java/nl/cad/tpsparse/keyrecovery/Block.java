@@ -101,4 +101,8 @@ public class Block implements Comparable<Block> {
         }
         return d;
     }
+
+    public boolean sameValue(Block b) {
+        return Arrays.equals(values, b.values);
+    }
 }
