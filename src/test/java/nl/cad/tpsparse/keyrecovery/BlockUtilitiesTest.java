@@ -134,4 +134,23 @@ public class BlockUtilitiesTest {
         assertEquals(in.get(1), out.lastKey());
     }
 
+    @Test
+    public void shouldDetectSequencePart() {
+        assertFalse(blockUtilities.isSequencePart(0x01021012));
+        assertFalse(blockUtilities.isSequencePart(0x0201fffe));
+        assertFalse(blockUtilities.isSequencePart(0x04030200));
+
+        assertTrue(blockUtilities.isSequencePart(0x0f0e0d0c));
+        assertTrue(blockUtilities.isSequencePart(0x0100fffe));
+        assertTrue(blockUtilities.isSequencePart(0x00fffefd));
+        assertTrue(blockUtilities.isSequencePart(0x020100ff));
+    }
+
+    @Test
+    public void shouldDetectB0B0Part() {
+        assertFalse(blockUtilities.isB0B0Part(0x04030200));
+
+        assertTrue(blockUtilities.isB0B0Part(0xB0B0B0B0));
+    }
+
 }

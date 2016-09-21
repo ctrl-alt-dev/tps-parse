@@ -76,6 +76,13 @@ public class BlockUtilities {
     }
 
     /**
+     * 0xB0B0B0B0 blocks are scattered around TPS files, I think they indicate empty space.
+     */
+    public boolean isB0B0Part(int value) {
+        return value == 0xB0B0B0B0;
+    }
+
+    /**
      * The Header Index End block is one of the few blocks in TPS with contents
      * that are predictable and is located at a fixed location. Typically it is
      * filled with identical values (the size of the file, minus the size of the
@@ -116,4 +123,16 @@ public class BlockUtilities {
         }
         return new Block(0, new RandomAccess(sequence).leLongArray(16), false);
     }
+
+    /**
+     * @return true when value is a byte sequence like 0x2A292827 or 0x0100FFFE.
+     */
+    public boolean isSequencePart(int value) {
+        int a = (value) & 0x0FF;
+        int b = (value >>> 8) & 0x0FF;
+        int c = (value >>> 16) & 0x0FF;
+        int d = (value >>> 24) & 0x0FF;
+        return (((d - c == 1) || (d - c == -255)) && ((c - b == 1) || (c - b == -255)) && ((b - a == 1) || (b - a == -255)));
+    }
+
 }
