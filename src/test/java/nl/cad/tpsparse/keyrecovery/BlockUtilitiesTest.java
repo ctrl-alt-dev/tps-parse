@@ -53,6 +53,38 @@ public class BlockUtilitiesTest {
     }
 
     @Test
+    public void shouldGetHeaderIndexEndBlock() throws IOException {
+        List<Block> blocks = blockUtilities.loadFile(new File("./src/test/resources/enc/encrypted-a.tps"), true);
+
+        Block crypt = blockUtilities.getHeaderIndexEndBlock(blocks, true);
+        Block plain = blockUtilities.getHeaderIndexEndBlock(blocks, false);
+
+        assertEquals(0x1c0, crypt.getOffset());
+        assertEquals(0x1c0, plain.getOffset());
+
+        assertEquals(0x925cdcb4, crypt.getValues()[0]);
+        assertEquals(0x00000004, plain.getValues()[0]);
+    }
+
+    @Test
+    public void shouldGetSequenceBlock() {
+        Block sequenceBlock = blockUtilities.generateSequenceBlock(0x5F5E5D5C);
+        assertEquals(0x23222120, sequenceBlock.getValues()[0]);
+        assertEquals(0x27262524, sequenceBlock.getValues()[1]);
+        assertEquals(0x5B5A5958, sequenceBlock.getValues()[14]);
+        assertEquals(0x5F5E5D5C, sequenceBlock.getValues()[15]);
+    }
+
+    @Test
+    public void shouldGetSequenceBlockWithCycle() {
+        Block sequenceBlock = blockUtilities.generateSequenceBlock(0x1F1E1D1C);
+        assertEquals(0xE3E2E1E0, sequenceBlock.getValues()[0]);
+        assertEquals(0xE7E6E5E4, sequenceBlock.getValues()[1]);
+        assertEquals(0x1B1A1918, sequenceBlock.getValues()[14]);
+        assertEquals(0x1F1E1D1C, sequenceBlock.getValues()[15]);
+    }
+
+    @Test
     public void shouldFindNoIdenticalBlocks() {
         List<Block> in = new ArrayList<>();
         in.add(new Block(0, new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 }, true));
