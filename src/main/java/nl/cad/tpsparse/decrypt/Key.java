@@ -215,8 +215,8 @@ public class Key {
         return rx.data();
     }
 
-	public int[] toIntArray() {
-		return new RandomAccess(this.getBytes()).leLongArray(16);
-	}
+    public int[] toIntArray() {
+        return new RandomAccess(this.getBytes()).leLongArray(16);
+    }
 
 }

@@ -19,6 +19,9 @@ import java.util.Arrays;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
+import nl.cad.tpsparse.bin.RandomAccess;
+import nl.cad.tpsparse.decrypt.Key;
+
 /**
  * A key being recovered.
  * A key is divided in sixteen 32 bit values.
@@ -103,6 +106,19 @@ public class PartialKey implements Comparable<PartialKey> {
 
     public PartialKey apply(int idx, int keya) {
         return new PartialKey(this, idx, keya);
+    }
+
+    public Key toKey() {
+        if (this.isComplete()) {
+            byte[] key = new byte[64];
+            RandomAccess rx = new RandomAccess(key);
+            for (int t = 0; t < this.key.length; t++) {
+                rx.setLeLong(this.key[t]);
+            }
+            return Key.initializedKey(key);
+        } else {
+            throw new IllegalStateException("Incomplete PartialKey");
+        }
     }
 
     @Override
