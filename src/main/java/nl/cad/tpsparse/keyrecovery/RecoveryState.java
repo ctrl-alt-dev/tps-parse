@@ -86,7 +86,7 @@ public class RecoveryState implements Comparable<RecoveryState> {
         }
         return result;
     }
-    
+
     /**
      * Scans the keyIndex to find any value that has a swap of the same index that decrypts the header block.
      * So, it scans 60 of the index's 64 bits.
@@ -103,6 +103,14 @@ public class RecoveryState implements Comparable<RecoveryState> {
             result.add(new RecoveryState(this, entry.getKey(), entry.getValue()));
         }
         return result;
+    }
+
+    public static List<RecoveryState> reduceFirst(List<RecoveryState> candidates, int idx, List<Block> blocks) {
+        return reduceFirstSequential(reduceFirstB0B0(candidates, idx, blocks), idx, blocks);
+    }
+
+    public static List<RecoveryState> reduceNext(List<RecoveryState> candidates, int idx) {
+        return reduceNextSequential(reduceNextB0B0(candidates, idx), idx);
     }
 
     /**
@@ -143,7 +151,7 @@ public class RecoveryState implements Comparable<RecoveryState> {
      * @param idx the index to evaluate.
      * @return the remaining candidates.
      */
-    public static List<RecoveryState> reduceB0B0(List<RecoveryState> candidates, int idx) {
+    public static List<RecoveryState> reduceNextB0B0(List<RecoveryState> candidates, int idx) {
         List<RecoveryState> results = new ArrayList<>();
         for (RecoveryState tmp : new TreeSet<>(candidates)) {
             List<Block> b0b0s = new ArrayList<>();
@@ -199,7 +207,7 @@ public class RecoveryState implements Comparable<RecoveryState> {
      * @param idx the index to evaluate.
      * @return the remaining candidates.
      */
-    public static List<RecoveryState> reduceSequential(List<RecoveryState> candidates, int idx) {
+    public static List<RecoveryState> reduceNextSequential(List<RecoveryState> candidates, int idx) {
         List<RecoveryState> results = new ArrayList<>();
         for (RecoveryState tmp : new TreeSet<>(candidates)) {
             List<Block> seqs = new ArrayList<>();
