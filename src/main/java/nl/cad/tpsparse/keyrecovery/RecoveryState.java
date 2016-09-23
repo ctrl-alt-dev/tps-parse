@@ -72,8 +72,32 @@ public class RecoveryState implements Comparable<RecoveryState> {
         return new RecoveryState(encryptedHeaderBlock, plaintextHeaderBlock);
     }
 
-    public List<RecoveryState> indexScan(int idx) {
-        NavigableMap<PartialKey, Block> results = key.keyIndexScan(idx, encryptedHeaderBlock, plaintextHeaderBlock);
+    /**
+     * Scans the keyIndex to find a value that decrypts the header block.
+     * Takes all 64 bits into consideration. 
+     * @param keyIdx the index to scan.
+     * @return any solutions (many, with false positives).
+     */
+    public List<RecoveryState> indexScan(int keyIdx) {
+        NavigableMap<PartialKey, Block> results = key.keyIndexScan(keyIdx, encryptedHeaderBlock, plaintextHeaderBlock);
+        List<RecoveryState> result = new ArrayList<>();
+        for (Map.Entry<PartialKey, Block> entry : results.entrySet()) {
+            result.add(new RecoveryState(this, entry.getKey(), entry.getValue()));
+        }
+        return result;
+    }
+    
+    /**
+     * Scans the keyIndex to find any value that has a swap of the same index that decrypts the header block.
+     * So, it scans 60 of the index's 64 bits.
+     * Note that this does NOT indicate that the value found is correct (although it might be) but
+     * merely indicates that this column swaps with itself. This happens a lot with columns 0 and 8
+     * that are popular targets to swap to and also like to swap with themselves.    
+     * @param keyIdx the index to scan.
+     * @return any solutions (typically just 1).
+     */
+    public List<RecoveryState> indexSelfScan(int keyIdx) {
+        NavigableMap<PartialKey, Block> results = key.keyIndexSelfScan(keyIdx, encryptedHeaderBlock, plaintextHeaderBlock);
         List<RecoveryState> result = new ArrayList<>();
         for (Map.Entry<PartialKey, Block> entry : results.entrySet()) {
             result.add(new RecoveryState(this, entry.getKey(), entry.getValue()));
@@ -81,6 +105,15 @@ public class RecoveryState implements Comparable<RecoveryState> {
         return result;
     }
 
+    /**
+     * reduces the number of solutions by attempting to decrypting blocks with duplicates to 0xB0B0B0B0 blocks. 
+     * If at least one of those blocks is found the solution is kept.  
+     * The blocks that decrypt to 0xB0B0 are saved in that keys recovery state for further decryption.
+     * @param candidates the candidate solutions.
+     * @param idx the index to evaluate.
+     * @param blocks the blocks to find duplicates in.
+     * @return the remaining candidate solutions.
+     */
     public static List<RecoveryState> reduceFirstB0B0(List<RecoveryState> candidates, int idx, List<Block> blocks) {
         List<RecoveryState> results = new ArrayList<>();
         NavigableMap<Block, List<Block>> same = util.findIdenticalBlocks(blocks);
@@ -103,6 +136,13 @@ public class RecoveryState implements Comparable<RecoveryState> {
         return results;
     }
 
+    /**
+     * reduces the number of solutions by re-evaluating the found 0xB0B0 blocks to this index.
+     * If at least one block still decrypts to 0xB0B0 the candidate is kept.
+     * @param candidates the candidate solutions.
+     * @param idx the index to evaluate.
+     * @return the remaining candidates.
+     */
     public static List<RecoveryState> reduceB0B0(List<RecoveryState> candidates, int idx) {
         List<RecoveryState> results = new ArrayList<>();
         for (RecoveryState tmp : new TreeSet<>(candidates)) {
@@ -115,7 +155,7 @@ public class RecoveryState implements Comparable<RecoveryState> {
             }
             if (!b0b0s.isEmpty()) {
                 RecoveryState recovery = new RecoveryState(tmp);
-                recovery.b0b0Blocks.clear();
+                recovery.b0b0Blocks.clear(); // previous B0B0's
                 recovery.b0b0Blocks.addAll(b0b0s);
                 results.add(recovery);
             }
@@ -124,6 +164,14 @@ public class RecoveryState implements Comparable<RecoveryState> {
         return results;
     }
 
+    /**
+     * reduces the number of candidate solutions by finding any blocks that decrypt to a sequence (like 0x40414243).
+     * Blocks that are found to hold a sequence are added to the recovery state for further evaluation.
+     * @param candidates the candidates.
+     * @param idx the index to evaluate.
+     * @param blocks the blocks that may contain sequences.
+     * @return the remaining candidates.
+     */
     public static List<RecoveryState> reduceFirstSequential(List<RecoveryState> candidates, int idx, List<Block> blocks) {
         List<RecoveryState> results = new ArrayList<>();
         for (RecoveryState tmp : new TreeSet<>(candidates)) {
@@ -145,6 +193,12 @@ public class RecoveryState implements Comparable<RecoveryState> {
         return results;
     }
 
+    /**
+     * reduces the number of candidate solutions by finding any blocks that decrypt to a sequence (like 0x40414243).
+     * @param candidates the candidates.
+     * @param idx the index to evaluate.
+     * @return the remaining candidates.
+     */
     public static List<RecoveryState> reduceSequential(List<RecoveryState> candidates, int idx) {
         List<RecoveryState> results = new ArrayList<>();
         for (RecoveryState tmp : new TreeSet<>(candidates)) {

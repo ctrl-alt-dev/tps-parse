@@ -104,6 +104,47 @@ public class PartialKey implements Comparable<PartialKey> {
         return results;
     }
 
+    /**
+     * Some key indexes have their swap column set at themselves. This method attempts to find them,
+     * @param idx the index to scan.
+     * @param encrypted the encrypted block.
+     * @param plaintext the plaintext block.
+     * @return the found solutions.
+     */
+    public NavigableMap<PartialKey, Block> keyIndexSelfScan(int idx, Block encrypted, Block plaintext) {
+        NavigableMap<PartialKey, Block> results = new TreeMap<PartialKey, Block>();
+        int posa = idx;
+        int plain = plaintext.getValues()[posa];
+        for (long v = 0; v <= 0xFFFFFFFFL; v++) {
+            int keya = (int) v;
+            int posb = keya & 0x0F;
+            if (posb != idx) {
+            	continue;
+            }
+            int data1 = encrypted.getValues()[posa];
+            data1 = (int) ((((long) data1) & 0xFFFFFFFFL) - (((long) keya) & 0xFFFFFFFFL));
+            int data2 = encrypted.getValues()[posb];
+            data2 = (int) ((((long) data2) & 0xFFFFFFFFL) - (((long) keya) & 0xFFFFFFFFL));
+            int and1 = data1 & keya;
+            int not1 = ~keya;
+            int and2 = data2 & not1;
+            int andor = and1 | and2;
+            //
+            if (andor == plain) {
+                //
+                int and3 = data2 & keya;
+                int and4 = data1 & not1;
+                int andor2 = and3 | and4;
+                //
+                Block dec = encrypted.apply(posa, posb, andor, andor2);
+                PartialKey key = this.apply(idx, keya);
+                results.put(key, dec);
+            }
+        }
+        return results;
+    }
+
+    
     public PartialKey apply(int idx, int keya) {
         return new PartialKey(this, idx, keya);
     }
