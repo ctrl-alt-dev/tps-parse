@@ -16,7 +16,13 @@
 package nl.cad.tpsparse.keyrecovery;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,7 +78,7 @@ public class RecoveryStateTest {
     }
 
     @Test
-    public void shouldScanAndReduce() {
+    public void shouldScanAndReduce() throws IOException {
         RecoveryState start = RecoveryState.start(encrypted, plaintext);
         List<RecoveryState> scanResults = start.indexScan(15);
         assertEquals(192, scanResults.size());
@@ -80,11 +86,26 @@ public class RecoveryStateTest {
         scanResults = RecoveryState.reduceFirst(scanResults, 15, blocks);
         assertEquals(2, scanResults.size());
 
+        verifyReadAndWrite(scanResults.get(0));
+
         scanResults = scanResults.get(0).indexScan(14);
         assertEquals(1450, scanResults.size());
 
         scanResults = RecoveryState.reduceNext(scanResults, 14);
         assertEquals(2, scanResults.size());
+    }
+
+    private void verifyReadAndWrite(RecoveryState recoveryState) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ObjectOutputStream oout = new ObjectOutputStream(out);
+        recoveryState.write(oout);
+        oout.close();
+
+        ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+        ObjectInputStream iin = new ObjectInputStream(in);
+        RecoveryState copy = RecoveryState.read(iin);
+
+        assertTrue(copy.equals(recoveryState));
     }
 
 }

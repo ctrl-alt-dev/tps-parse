@@ -15,6 +15,9 @@
  */
 package nl.cad.tpsparse.keyrecovery;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 
 import nl.cad.tpsparse.bin.RandomAccess;
@@ -104,5 +107,24 @@ public class Block implements Comparable<Block> {
 
     public boolean sameValue(Block b) {
         return Arrays.equals(values, b.values);
+    }
+
+    public void write(ObjectOutputStream out) throws IOException {
+        out.writeInt(offset);
+        out.writeBoolean(encrypted);
+        out.writeInt(values.length);
+        for (int t = 0; t < values.length; t++) {
+            out.writeInt(values[t]);
+        }
+    }
+
+    public static Block read(ObjectInputStream in) throws IOException {
+        int offset = in.readInt();
+        boolean encrypted = in.readBoolean();
+        int[] values = new int[in.readInt()];
+        for (int t = 0; t < values.length; t++) {
+            values[t] = in.readInt();
+        }
+        return new Block(offset, values, encrypted);
     }
 }

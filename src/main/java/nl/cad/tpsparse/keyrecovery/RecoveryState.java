@@ -15,6 +15,9 @@
  */
 package nl.cad.tpsparse.keyrecovery;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +44,11 @@ public class RecoveryState implements Comparable<RecoveryState> {
     private List<Block> b0b0Blocks;
 
     private List<Block> sequentialBlocks;
+
+    private RecoveryState() {
+        this.b0b0Blocks = new ArrayList<>();
+        this.sequentialBlocks = new ArrayList<>();
+    }
 
     private RecoveryState(Block encryptedHeaderBlock, Block plaintextHeaderBlock) {
         this.key = new PartialKey();
@@ -266,6 +274,39 @@ public class RecoveryState implements Comparable<RecoveryState> {
 
     public Key getKey() {
         return key.toKey();
+    }
+
+    public void write(ObjectOutputStream out) throws IOException {
+        key.write(out);
+
+        encryptedHeaderBlock.write(out);
+        plaintextHeaderBlock.write(out);
+
+        out.writeInt(b0b0Blocks.size());
+        for (Block b : b0b0Blocks) {
+            b.write(out);
+        }
+
+        out.writeInt(sequentialBlocks.size());
+        for (Block b : sequentialBlocks) {
+            b.write(out);
+        }
+    }
+
+    public static RecoveryState read(ObjectInputStream in) throws IOException {
+        RecoveryState rs = new RecoveryState();
+        rs.key = PartialKey.read(in);
+        rs.encryptedHeaderBlock = Block.read(in);
+        rs.plaintextHeaderBlock = Block.read(in);
+        int size = in.readInt();
+        for (int t = 0; t < size; t++) {
+            rs.b0b0Blocks.add(Block.read(in));
+        }
+        size = in.readInt();
+        for (int t = 0; t < size; t++) {
+            rs.sequentialBlocks.add(Block.read(in));
+        }
+        return rs;
     }
 
 }

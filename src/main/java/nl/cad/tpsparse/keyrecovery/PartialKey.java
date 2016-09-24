@@ -15,6 +15,9 @@
  */
 package nl.cad.tpsparse.keyrecovery;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -119,7 +122,7 @@ public class PartialKey implements Comparable<PartialKey> {
             int keya = (int) v;
             int posb = keya & 0x0F;
             if (posb != idx) {
-            	continue;
+                continue;
             }
             int data1 = encrypted.getValues()[posa];
             data1 = (int) ((((long) data1) & 0xFFFFFFFFL) - (((long) keya) & 0xFFFFFFFFL));
@@ -144,7 +147,6 @@ public class PartialKey implements Comparable<PartialKey> {
         return results;
     }
 
-    
     public PartialKey apply(int idx, int keya) {
         return new PartialKey(this, idx, keya);
     }
@@ -229,6 +231,27 @@ public class PartialKey implements Comparable<PartialKey> {
             }
         }
         return sb.toString();
+    }
+
+    public void write(ObjectOutputStream out) throws IOException {
+        out.writeInt(valid.length);
+        for (int t = 0; t < valid.length; t++) {
+            out.writeBoolean(valid[t]);
+            out.writeInt(key[t]);
+        }
+    }
+
+    public static PartialKey read(ObjectInputStream in) throws IOException {
+        boolean[] valid = new boolean[in.readInt()];
+        int[] key = new int[valid.length];
+        for (int t = 0; t < valid.length; t++) {
+            valid[t] = in.readBoolean();
+            key[t] = in.readInt();
+        }
+        PartialKey pk = new PartialKey();
+        pk.key = key;
+        pk.valid = valid;
+        return pk;
     }
 
 }
