@@ -105,6 +105,10 @@ public class RandomAccessTest {
         // from real world TPS, 7 bytes -> 14 digits, minus one for the sign =
         // 13 digits, minus 8 behind the dot, remains 5 before, not 7!
         assertEquals("0.00000000", new RandomAccess(new byte[] { (byte) 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }).binaryCodedDecimal(7, 7, 8));
+        // from real world TPS
+        // this number has 5 digits, with all of them coming after the decimal point
+        // this decimal is reported as DECIMAL(5,5) in the TopScan utility
+        assertEquals("0.50000", new RandomAccess(new byte[] { 0x05, 0x00, 0x00 }).binaryCodedDecimal(3, 3, 5));
     }
 
     @Test

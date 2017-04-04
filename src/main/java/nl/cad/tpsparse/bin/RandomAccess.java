@@ -486,7 +486,9 @@ public class RandomAccess {
                 break;
             }
         }
-        if (idx == number.length() - 1) {
+        if (number.length() == 0) {
+            return "0";
+        } else if (idx == number.length() - 1) {
             return number.substring(idx);
         } else {
             return number.substring(idx + 1);
