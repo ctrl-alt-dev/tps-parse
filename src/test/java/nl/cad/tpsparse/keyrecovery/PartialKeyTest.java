@@ -72,7 +72,7 @@ public class PartialKeyTest {
     }
 
     @Test
-    public void shouldKeyScan() {
+    public void shouldReverseKeyScan() {
         Key k = new Key("aaa").init();
         byte[] plain = new byte[64];
         byte[] crypt = new byte[64];
@@ -83,10 +83,27 @@ public class PartialKeyTest {
         PartialKey k1 = new PartialKey();
         PartialKey toFind = k1.apply(15, k.getWord(15));
 
-        NavigableMap<PartialKey, Block> results = k1.keyIndexScan(15, bcrypt, bplain);
+        NavigableMap<PartialKey, Block> results = k1.reverseKeyIndexScan(15, bcrypt, bplain);
 
         assertTrue(results.containsKey(toFind));
         assertEquals(1216, results.size());
+    }
+
+    @Test
+    public void shouldForwardKeyScan() {
+        Key k = new Key("aaa").init();
+        byte[] plain = new byte[64];
+        byte[] crypt = new byte[64];
+        k.encrypt64(crypt);
+        Block bplain = new Block(new RandomAccess(plain), false);
+        Block bcrypt = new Block(new RandomAccess(crypt), true);
+
+        PartialKey k1 = new PartialKey();
+        PartialKey toFind = k1.apply(3, k.getWord(3));
+
+        NavigableMap<PartialKey, Block> results = k1.forwardKeyIndexScan(3, bcrypt, bplain);
+        assertTrue(results.containsKey(toFind));
+        assertEquals(1, results.size());
     }
 
 }

@@ -156,11 +156,11 @@ public abstract class AbstractTpsToCsv {
         return sb.toString();
     }
 
-    protected List<List<MemoRecord>> prefetchMemos() {
+    protected List<Map<Integer, MemoRecord>> prefetchMemos() {
         if (verbose) {
             System.out.println("Prefetching Memo's");
         }
-        List<List<MemoRecord>> memos = new ArrayList<List<MemoRecord>>();
+        List<Map<Integer, MemoRecord>> memos = new ArrayList<>();
         for (int t = 0; t < table.getMemos().size(); t++) {
             memos.add(tpsFile.getMemoRecords(tableId, t, ignoreErrors));
         }
@@ -177,7 +177,7 @@ public abstract class AbstractTpsToCsv {
      * @param memos the preloaded memo's
      * @param rec the data record to read from.
      */
-    protected void onRecord(List<List<MemoRecord>> memos, DataRecord rec) {
+    protected void onRecord(List<Map<Integer, MemoRecord>> memos, DataRecord rec) {
         int recordNumber = rec.getRecordNumber();
         csv.addCell(recordNumber);
         List<FieldDefinitionRecord> fields = table.getFields();
@@ -196,30 +196,26 @@ public abstract class AbstractTpsToCsv {
         }
         for (int t = 0; t < table.getMemos().size(); t++) {
             MemoDefinitionRecord def = table.getMemos().get(t);
-            List<MemoRecord> list = memos.get(t);
-            boolean found = false;
-            for (MemoRecord memo : list) {
-                if (memo.getOwner() == recordNumber) {
-                    if (def.isMemo()) {
-                        csv.addCell(memo.getDataAsMemo());
-                    } else {
-                        String fileName = getBaseFileName() + "-" + recordNumber + "-" + t + ".bin";
-                        csv.addCell(fileName);
-                        try {
-                            writeFile(fileName, memo.getDataAsBlob());
-                        } catch (ArrayIndexOutOfBoundsException ex) {
-                            if (ignoreErrors) {
-                                System.out.println("ERROR : for " + fileName + " : BLOB Length mismatch - saving available bytes (" + ex.getMessage() + ")");
-                                writeFile(fileName, memo.getDataAsRaw());
-                            } else {
-                                throw ex;
-                            }
+            Map<Integer, MemoRecord> list = memos.get(t);
+            MemoRecord memo = list.get(recordNumber);
+            if (memo != null) {
+                if (def.isMemo()) {
+                    csv.addCell(memo.getDataAsMemo());
+                } else {
+                    String fileName = getBaseFileName() + "-" + recordNumber + "-" + t + ".bin";
+                    csv.addCell(fileName);
+                    try {
+                        writeFile(fileName, memo.getDataAsBlob());
+                    } catch (ArrayIndexOutOfBoundsException ex) {
+                        if (ignoreErrors) {
+                            System.out.println("ERROR : for " + fileName + " : BLOB Length mismatch - saving available bytes (" + ex.getMessage() + ")");
+                            writeFile(fileName, memo.getDataAsRaw());
+                        } else {
+                            throw ex;
                         }
                     }
-                    found = true;
                 }
-            }
-            if (!found) {
+            } else {
                 csv.addCell("");
             }
         }

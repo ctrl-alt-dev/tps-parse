@@ -48,7 +48,7 @@ public class BufferingTpsToCsv extends AbstractTpsToCsv {
         //
     }
 
-    protected void processRecords(List<List<MemoRecord>> memos, Map<Integer, DataRecord> recordsById) {
+    protected void processRecords(List<Map<Integer, MemoRecord>> memos, Map<Integer, DataRecord> recordsById) {
         if (isVerbose()) {
             System.out.println("Converting " + recordsById.size() + " records to CSV");
             System.out.println("Memory: " + Utils.reportMemoryUsage());
@@ -64,7 +64,7 @@ public class BufferingTpsToCsv extends AbstractTpsToCsv {
             System.out.println("Sorting records and checking for duplicates.");
             System.out.println("Memory: " + Utils.reportMemoryUsage());
         }
-        Map<Integer, DataRecord> recordsById = new TreeMap<Integer, DataRecord>();
+        Map<Integer, DataRecord> recordsById = new TreeMap<>();
         //
         for (DataRecord rec : getTpsFile().getDataRecords(getTableId(), getTable(), isIgnoreErrors())) {
             int recordNumber = rec.getRecordNumber();

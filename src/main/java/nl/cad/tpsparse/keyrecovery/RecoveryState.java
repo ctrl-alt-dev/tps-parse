@@ -38,8 +38,11 @@ public class RecoveryState implements Comparable<RecoveryState> {
 
     private PartialKey key;
 
-    private Block encryptedHeaderBlock;
-    private Block plaintextHeaderBlock;
+    private Block originalEncryptedHeaderBlock;
+    private Block originalPlaintextHeaderBlock;
+
+    private Block currentEncryptedHeaderBlock;
+    private Block currentPlaintextHeaderBlock;
 
     private List<Block> b0b0Blocks;
 
@@ -52,8 +55,10 @@ public class RecoveryState implements Comparable<RecoveryState> {
 
     private RecoveryState(Block encryptedHeaderBlock, Block plaintextHeaderBlock) {
         this.key = new PartialKey();
-        this.encryptedHeaderBlock = encryptedHeaderBlock;
-        this.plaintextHeaderBlock = plaintextHeaderBlock;
+        this.originalEncryptedHeaderBlock = encryptedHeaderBlock;
+        this.originalPlaintextHeaderBlock = plaintextHeaderBlock;
+        this.currentEncryptedHeaderBlock = encryptedHeaderBlock;
+        this.currentPlaintextHeaderBlock = plaintextHeaderBlock;
         this.b0b0Blocks = new ArrayList<>();
         this.sequentialBlocks = new ArrayList<>();
     }
@@ -61,17 +66,21 @@ public class RecoveryState implements Comparable<RecoveryState> {
     private RecoveryState(RecoveryState state) {
         this.parent = state;
         this.key = state.key;
-        this.encryptedHeaderBlock = state.encryptedHeaderBlock;
-        this.plaintextHeaderBlock = state.plaintextHeaderBlock;
+        this.originalEncryptedHeaderBlock = state.originalEncryptedHeaderBlock;
+        this.originalPlaintextHeaderBlock = state.originalPlaintextHeaderBlock;
+        this.currentEncryptedHeaderBlock = state.currentEncryptedHeaderBlock;
+        this.currentPlaintextHeaderBlock = state.currentPlaintextHeaderBlock;
         this.b0b0Blocks = new ArrayList<>(state.b0b0Blocks);
         this.sequentialBlocks = new ArrayList<>(state.sequentialBlocks);
     }
 
-    private RecoveryState(RecoveryState state, PartialKey key, Block partiallyDecrypted) {
+    private RecoveryState(RecoveryState state, PartialKey key, Block partial, boolean forward) {
         this.parent = state;
         this.key = key;
-        this.encryptedHeaderBlock = partiallyDecrypted;
-        this.plaintextHeaderBlock = state.plaintextHeaderBlock;
+        this.currentEncryptedHeaderBlock = forward ? state.currentEncryptedHeaderBlock : partial;
+        this.currentPlaintextHeaderBlock = forward ? partial : state.currentPlaintextHeaderBlock;
+        this.originalEncryptedHeaderBlock = state.originalEncryptedHeaderBlock;
+        this.originalPlaintextHeaderBlock = state.originalPlaintextHeaderBlock;
         this.b0b0Blocks = new ArrayList<>(state.b0b0Blocks);
         this.sequentialBlocks = new ArrayList<>(state.sequentialBlocks);
     }
@@ -86,11 +95,20 @@ public class RecoveryState implements Comparable<RecoveryState> {
      * @param keyIdx the index to scan.
      * @return any solutions (many, with false positives).
      */
-    public List<RecoveryState> indexScan(int keyIdx) {
-        NavigableMap<PartialKey, Block> results = key.keyIndexScan(keyIdx, encryptedHeaderBlock, plaintextHeaderBlock);
+    public List<RecoveryState> reverseIndexScan(int keyIdx) {
+        NavigableMap<PartialKey, Block> results = key.reverseKeyIndexScan(keyIdx, currentEncryptedHeaderBlock, currentPlaintextHeaderBlock);
         List<RecoveryState> result = new ArrayList<>();
         for (Map.Entry<PartialKey, Block> entry : results.entrySet()) {
-            result.add(new RecoveryState(this, entry.getKey(), entry.getValue()));
+            result.add(new RecoveryState(this, entry.getKey(), entry.getValue(), false));
+        }
+        return result;
+    }
+
+    public List<RecoveryState> forwardIndexScan(int keyIdx) {
+        NavigableMap<PartialKey, Block> results = key.forwardKeyIndexScan(keyIdx, currentEncryptedHeaderBlock, currentPlaintextHeaderBlock);
+        List<RecoveryState> result = new ArrayList<>();
+        for (Map.Entry<PartialKey, Block> entry : results.entrySet()) {
+            result.add(new RecoveryState(this, entry.getKey(), entry.getValue(), true));
         }
         return result;
     }
@@ -105,10 +123,10 @@ public class RecoveryState implements Comparable<RecoveryState> {
      * @return any solutions (typically just 1).
      */
     public List<RecoveryState> indexSelfScan(int keyIdx) {
-        NavigableMap<PartialKey, Block> results = key.keyIndexSelfScan(keyIdx, encryptedHeaderBlock, plaintextHeaderBlock);
+        NavigableMap<PartialKey, Block> results = key.keyIndexSelfScan(keyIdx, currentEncryptedHeaderBlock, currentPlaintextHeaderBlock);
         List<RecoveryState> result = new ArrayList<>();
         for (Map.Entry<PartialKey, Block> entry : results.entrySet()) {
-            result.add(new RecoveryState(this, entry.getKey(), entry.getValue()));
+            result.add(new RecoveryState(this, entry.getKey(), entry.getValue(), true));
         }
         return result;
     }
@@ -279,8 +297,8 @@ public class RecoveryState implements Comparable<RecoveryState> {
     public void write(ObjectOutputStream out) throws IOException {
         key.write(out);
 
-        encryptedHeaderBlock.write(out);
-        plaintextHeaderBlock.write(out);
+        currentEncryptedHeaderBlock.write(out);
+        currentPlaintextHeaderBlock.write(out);
 
         out.writeInt(b0b0Blocks.size());
         for (Block b : b0b0Blocks) {
@@ -296,8 +314,8 @@ public class RecoveryState implements Comparable<RecoveryState> {
     public static RecoveryState read(ObjectInputStream in) throws IOException {
         RecoveryState rs = new RecoveryState();
         rs.key = PartialKey.read(in);
-        rs.encryptedHeaderBlock = Block.read(in);
-        rs.plaintextHeaderBlock = Block.read(in);
+        rs.currentEncryptedHeaderBlock = Block.read(in);
+        rs.currentPlaintextHeaderBlock = Block.read(in);
         int size = in.readInt();
         for (int t = 0; t < size; t++) {
             rs.b0b0Blocks.add(Block.read(in));
@@ -309,4 +327,11 @@ public class RecoveryState implements Comparable<RecoveryState> {
         return rs;
     }
 
+    public boolean isComplete() {
+        return key.isComplete();
+    }
+
+    public PartialKey getPartialKey() {
+        return key;
+    }
 }

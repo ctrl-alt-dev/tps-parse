@@ -76,8 +76,9 @@ public class PartialKey implements Comparable<PartialKey> {
      * of crypttext with plaintext. This only works if there are no other key indexes
      * with a swap for this index. For index 0x0F it always works because none of
      * the other indexes will select index 0x0F.
+     * @return a map with the partial keys and the <i>decrypted</i> block belonging to this key.
      */
-    public NavigableMap<PartialKey, Block> keyIndexScan(int idx, Block encrypted, Block plaintext) {
+    public NavigableMap<PartialKey, Block> reverseKeyIndexScan(int idx, Block encrypted, Block plaintext) {
         NavigableMap<PartialKey, Block> results = new TreeMap<PartialKey, Block>();
         int posa = idx;
         int plain = plaintext.getValues()[posa];
@@ -108,7 +109,49 @@ public class PartialKey implements Comparable<PartialKey> {
     }
 
     /**
-     * Some key indexes have their swap column set at themselves. This method attempts to find them,
+     * Attempts to find a matching key by attempting to encrypt known plain text and comparing it with
+     * the encrypted block. It excludes swaps to the left and self from the attempts. It will find one result if
+     * this index is not used as swap by any keys at other indexes.
+     * @return a map with the partial keys and the <i>encrypted</i> block belonging to this key.
+     */
+    public NavigableMap<PartialKey, Block> forwardKeyIndexScan(int idx, Block encrypted, Block plaintext) {
+        NavigableMap<PartialKey, Block> results = new TreeMap<PartialKey, Block>();
+        int posa = idx;
+        int crypt = encrypted.getValues()[posa];
+        for (long v = 0; v <= 0xFFFFFFFFL; v++) {
+            int keya = (int) v;
+            int posb = keya & 0x0F;
+            if (posb <= idx) {
+                continue;
+            }
+            //
+            int data1 = plaintext.getValues()[posa];
+            int data2 = plaintext.getValues()[posb];
+            //
+            int and1 = keya & data2;
+            int nota = ~keya;
+            int and2 = nota & data1;
+            int andor = and1 | and2;
+            //
+            int sum1 = (int) ((((long) keya) & 0xFFFFFFFFL) + ((long) andor) & 0xFFFFFFFFL);
+            //
+            if (sum1 == crypt) {
+                //
+                int and3 = keya & data1;
+                int and4 = nota & data2;
+                int andor2 = and3 | and4;
+                int sum2 = (int) ((((long) andor2) & 0xFFFFFFFFL) + ((long) keya) & 0xFFFFFFFFL);
+                //
+                Block enc = plaintext.apply(posa, posb, sum1, sum2);
+                PartialKey key = this.apply(idx, keya);
+                results.put(key, enc);
+            }
+        }
+        return results;
+    }
+
+    /**
+     * Some key indexes have their swap column set at themselves. This method attempts to find them.
      * @param idx the index to scan.
      * @param encrypted the encrypted block.
      * @param plaintext the plaintext block.
@@ -254,4 +297,32 @@ public class PartialKey implements Comparable<PartialKey> {
         return pk;
     }
 
+    public PartialKey merge(PartialKey other) {
+        PartialKey result = new PartialKey();
+        for (int t = 0; t < 15; t++) {
+            if (this.valid[t] && !other.valid[t]) {
+                result.valid[t] = true;
+                result.key[t] = this.key[t];
+            } else if (!this.valid[t] && other.valid[t]) {
+                result.valid[t] = true;
+                result.key[t] = other.key[t];
+            } else if (this.valid[t] && other.valid[t]) {
+                if (this.key[t] == other.key[t]) {
+                    result.valid[t] = true;
+                    result.key[t] = other.key[t];
+                } else {
+                    throw new IllegalArgumentException("PartialKeys disagree on index " + t);
+                }
+            }
+        }
+        return result;
+    }
+
+    public int getKeyPart(int idx) {
+        if (valid[idx]) {
+            return key[idx];
+        } else {
+            throw new IllegalArgumentException("Key part invalid at index " + idx);
+        }
+    }
 }

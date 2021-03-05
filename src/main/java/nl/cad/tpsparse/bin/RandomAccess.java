@@ -366,6 +366,10 @@ public class RandomAccess {
         return Integer.toHexString(ofs) + "/" + Integer.toHexString(length());
     }
 
+    public String toStringBase() {
+        return Integer.toHexString(baseOfs + ofs) + "/" + Integer.toHexString(length());
+    }
+
     public String toHex8(int value) {
         String tmp = Integer.toHexString(value);
         while (tmp.length() < 8) {

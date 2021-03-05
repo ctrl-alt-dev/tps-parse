@@ -93,7 +93,7 @@ public class TpsRecord {
                 throw new IllegalArgumentException("Data and record length mismatch.");
             }
         } catch (Exception ex) {
-            throw new RuntimeException("When reading " + (recordLength - copy) + " bytes of TpsRecord at " + rx);
+            throw new RuntimeException("When  reading " + (recordLength - copy) + " bytes of TpsRecord at " + rx);
         }
         //
         buildHeader();
@@ -112,7 +112,7 @@ public class TpsRecord {
                 header = new TableNameHeader(hdr);
             } else {
                 //
-                switch ((int) (hdr.peek(4) & 0xFF)) {
+                switch (hdr.peek(4) & 0xFF) {
                 case 0xF3:
                     header = new DataHeader(hdr);
                     break;

@@ -3,7 +3,7 @@ tps-parse
 
 Library for parsing Clarion TPS files. Also contains a TPS to CSV converter.
 
-(C) 2012-2013 E.Hooijmeijer, [Apache 2 licensed](https://www.apache.org/licenses/LICENSE-2.0.html)
+(C) 2012-2021 E.Hooijmeijer, [Apache 2 licensed](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 WARNING : This software is based on Reverse Engineered TPS Files.
           As such, its probably incomplete and may mis-interpret data.
@@ -51,6 +51,10 @@ Example for an encrypted TPS file:
 ```java
     TpsFile tpsFile = new TpsFile(new File("datafile.tps"), "password");
 ```
+
+V1.0.15 05 March 2021
+-------------------
+- improved performance on record to memo matching. 
 
 V1.0.14 31 May 2014
 ------------------

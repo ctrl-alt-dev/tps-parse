@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -201,7 +202,7 @@ public class TpsFile {
      */
     public List<TpsBlock> getTpsBlocks(boolean ignoreErrors) {
         TpsHeader hdr = getHeader();
-        List<TpsBlock> results = new ArrayList<TpsBlock>();
+        List<TpsBlock> results = new ArrayList<>();
         for (int t = 0; t < hdr.getPageStart().length; t++) {
             int ofs = hdr.getPageStart()[t];
             int end = hdr.getPageEnd()[t];
@@ -269,7 +270,7 @@ public class TpsFile {
      * @return a list of records.
      */
     public List<DataRecord> getDataRecords(final int table, final TableDefinitionRecord def, boolean ignoreErrors) {
-        final List<DataRecord> results = new ArrayList<DataRecord>();
+        final List<DataRecord> results = new ArrayList<>();
         visit(new Visitor() {
             @Override
             public void onTpsRecord(TpsRecord record) {
@@ -287,7 +288,7 @@ public class TpsFile {
      * @return all table name records.
      */
     public List<TableNameRecord> getTableNameRecords() {
-        final List<TableNameRecord> results = new ArrayList<TableNameRecord>();
+        final List<TableNameRecord> results = new ArrayList<>();
         visit(new Visitor() {
             @Override
             public void onTpsRecord(TpsRecord record) {
@@ -306,7 +307,7 @@ public class TpsFile {
      * @return all index records for the given table and index.
      */
     public List<IndexRecord> getIndexes(final int table, final int index) {
-        final List<IndexRecord> results = new ArrayList<IndexRecord>();
+        final List<IndexRecord> results = new ArrayList<>();
         visit(new Visitor() {
             @Override
             public void onTpsRecord(TpsRecord record) {
@@ -329,7 +330,7 @@ public class TpsFile {
      */
     public List<Integer> getIndexRecordIds(int table, int index) {
         List<IndexRecord> idx = getIndexes(table, index);
-        List<Integer> results = new ArrayList<Integer>();
+        List<Integer> results = new ArrayList<>();
         for (IndexRecord i : idx) {
             results.add(i.getRecordNumber());
         }
@@ -342,7 +343,7 @@ public class TpsFile {
      * @return the records.
      */
     public List<TpsRecord> getMetadata(final int table) {
-        final List<TpsRecord> results = new ArrayList<TpsRecord>();
+        final List<TpsRecord> results = new ArrayList<>();
         visit(new Visitor() {
             @Override
             public void onTpsRecord(TpsRecord record) {
@@ -361,7 +362,7 @@ public class TpsFile {
      * @return all TpsRecords in the file.
      */
     public List<TpsRecord> getAllRecords() {
-        final List<TpsRecord> results = new ArrayList<TpsRecord>();
+        final List<TpsRecord> results = new ArrayList<>();
         visit(new Visitor() {
             @Override
             public void onTpsRecord(TpsRecord record) {
@@ -381,8 +382,8 @@ public class TpsFile {
      * @param ignoreErrors ignores any page parse errors.
      * @return the memo records.
      */
-    public List<MemoRecord> getMemoRecords(final int tableNr, final int memoIdx, boolean ignoreErrors) {
-        final Map<Integer, List<TpsRecord>> memoGroups = new TreeMap<Integer, List<TpsRecord>>();
+    public Map<Integer, MemoRecord> getMemoRecords(final int tableNr, final int memoIdx, boolean ignoreErrors) {
+        final Map<Integer, List<TpsRecord>> memoGroups = new TreeMap<>();
         this.visit(new Visitor() {
             @Override
             public void onTpsRecord(TpsRecord record) {
@@ -400,11 +401,12 @@ public class TpsFile {
                 }
             }
         }, ignoreErrors);
-        List<MemoRecord> memos = new ArrayList<MemoRecord>();
+        Map<Integer, MemoRecord> memos = new HashMap<>();
         for (Map.Entry<Integer, List<TpsRecord>> memoGroup : memoGroups.entrySet()) {
             if (isComplete(memoGroup.getValue())) {
                 AbstractHeader header = memoGroup.getValue().get(0).getHeader();
-                memos.add(new MemoRecord(header, merge(memoGroup.getValue())));
+                MemoRecord memorecord = new MemoRecord(header, merge(memoGroup.getValue()));
+                memos.put(memorecord.getOwner(), memorecord);
             }
         }
         return memos;
@@ -433,7 +435,7 @@ public class TpsFile {
      * @return the table definitions.
      */
     public Map<Integer, TableDefinitionRecord> getTableDefinitions(final boolean ignoreErrors) {
-        final Map<Integer, List<TpsRecord>> tableDefs = new TreeMap<Integer, List<TpsRecord>>();
+        final Map<Integer, List<TpsRecord>> tableDefs = new TreeMap<>();
         this.visit(new Visitor() {
             @Override
             public void onTpsRecord(TpsRecord record) {
@@ -450,7 +452,7 @@ public class TpsFile {
                 }
             }
         }, ignoreErrors);
-        Map<Integer, TableDefinitionRecord> tables = new TreeMap<Integer, TableDefinitionRecord>();
+        Map<Integer, TableDefinitionRecord> tables = new TreeMap<>();
         for (Map.Entry<Integer, List<TpsRecord>> table : tableDefs.entrySet()) {
             if (isComplete(table.getValue())) {
                 tables.put(table.getKey(), new TableDefinitionRecord(merge(table.getValue()), stringEncoding));

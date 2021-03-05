@@ -127,4 +127,11 @@ public class Block implements Comparable<Block> {
         }
         return new Block(offset, values, encrypted);
     }
+
+    public void copyInto(byte[] buffer) {
+        RandomAccess rx = new RandomAccess(buffer);
+        for (int t = 0; t < values.length; t++) {
+            rx.setLeLong(values[t]);
+        }
+    }
 }

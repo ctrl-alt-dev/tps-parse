@@ -80,7 +80,7 @@ public class RecoveryStateTest {
     @Test
     public void shouldScanAndReduce() throws IOException {
         RecoveryState start = RecoveryState.start(encrypted, plaintext);
-        List<RecoveryState> scanResults = start.indexScan(15);
+        List<RecoveryState> scanResults = start.reverseIndexScan(15);
         assertEquals(192, scanResults.size());
 
         scanResults = RecoveryState.reduceFirst(scanResults, 15, blocks);
@@ -88,7 +88,7 @@ public class RecoveryStateTest {
 
         verifyReadAndWrite(scanResults.get(0));
 
-        scanResults = scanResults.get(0).indexScan(14);
+        scanResults = scanResults.get(0).reverseIndexScan(14);
         assertEquals(1450, scanResults.size());
 
         scanResults = RecoveryState.reduceNext(scanResults, 14);

@@ -48,7 +48,7 @@ public class TpsPage {
 
     private RandomAccess compressedData;
     private RandomAccess data;
-    private List<TpsRecord> records = new ArrayList<TpsRecord>();
+    private List<TpsRecord> records = new ArrayList<>();
 
     public TpsPage(RandomAccess rx) {
         addr = rx.leLong();

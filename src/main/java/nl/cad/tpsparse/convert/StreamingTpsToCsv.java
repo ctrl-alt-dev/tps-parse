@@ -49,7 +49,7 @@ public class StreamingTpsToCsv extends AbstractTpsToCsv {
         //
     }
 
-    protected void processRecords(final List<List<MemoRecord>> memos) {
+    protected void processRecords(final List<Map<Integer, MemoRecord>> memos) {
         if (isVerbose()) {
             System.out.println("Processing records");
             System.out.println("Memory: " + Utils.reportMemoryUsage());
