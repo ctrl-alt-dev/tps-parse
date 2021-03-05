@@ -55,6 +55,7 @@ Example for an encrypted TPS file:
 V1.0.15 05 March 2021
 -------------------
 - improved performance on record to memo matching. 
+- key recovery work in progress utility classes.
 
 V1.0.14 31 May 2014
 ------------------
