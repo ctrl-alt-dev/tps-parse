@@ -4,6 +4,11 @@
 target
 *.class
 
+# IntelliJ file-based
+*.iml
+*.ipr
+*.iws
+
 # Package Files #
 *.jar
 *.war
