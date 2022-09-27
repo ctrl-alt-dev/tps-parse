@@ -59,7 +59,7 @@ public class IndexDefinitionRecord {
     public List<FieldDefinitionRecord> getFieldRecords(TableDefinitionRecord rec) {
         List<FieldDefinitionRecord> results = new ArrayList<FieldDefinitionRecord>();
         for (int t = 0; t < keyField.length; t++) {
-            results.add(rec.getFields().get(t));
+            results.add(rec.getFields().get(keyField[t]));
         }
         return results;
     }
